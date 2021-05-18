@@ -29,7 +29,7 @@ jobs:
         with:
           distribution: zulu
           java-version: 14.0.1
-      - run: ./sbt -Depoll=true "test;stage"
+      - run: sbt -Depoll=true "test;stage"
       - run: cp LICENSE README.md target/universal/stage && git log -n 1 --pretty=oneline > target/universal/stage/commit.txt
       - run: cd target/universal/stage && tar -cvpJf ../../../lila-ws-3.0.tar.xz . && cd -
         env:
