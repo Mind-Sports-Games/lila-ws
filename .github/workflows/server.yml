@@ -1,0 +1,40 @@
+name: Build server
+
+on:
+  push:
+    paths:
+      - '.github/workflows/server.yml'
+      - 'src/**'
+      - 'build.sbt'
+      - '.sbtopts.default'
+  pull_request:
+    paths:
+      - '.github/workflows/server.yml'
+      - 'src/**'
+      - 'build.sbt'
+      - '.sbtopts.default'
+
+jobs:
+  openjdk14:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.sbt
+            ~/.ivy2/cache
+          key: ${{ runner.os }}-sbt-${{ hashFiles('**/project/build.properties') }}-${{ hashFiles('**/build.sbt') }}-${{ hashFiles('**/project/Dependencies.scala') }}
+      - uses: actions/setup-java@v2
+        with:
+          distribution: zulu
+          java-version: 14.0.1
+      - run: ./sbt -Depoll=true "test;stage"
+      - run: cp LICENSE README.md target/universal/stage && git log -n 1 --pretty=oneline > target/universal/stage/commit.txt
+      - run: cd target/universal/stage && tar -cvpJf ../../../lila-ws-3.0.tar.xz . && cd -
+        env:
+          XZ_OPT: '-0'
+      - uses: actions/upload-artifact@v1
+        with:
+          name: lila-ws
+          path: lila-ws-3.0.tar.xz
