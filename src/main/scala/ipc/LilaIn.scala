@@ -1,8 +1,8 @@
 package lila.ws
 package ipc
 
-import chess.format.Uci
-import chess.{ Centis, Color, MoveMetrics }
+import strategygames.format.Uci
+import strategygames.{ Centis, Color, MoveMetrics }
 import play.api.libs.json._
 
 sealed trait LilaIn {

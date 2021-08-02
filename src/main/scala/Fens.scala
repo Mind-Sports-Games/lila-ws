@@ -1,8 +1,8 @@
 package lila.ws
 
 import akka.actor.typed.ActorRef
-import chess.Color
-import chess.format.{ FEN, Uci }
+import strategygames.{ Color, GameLib }
+import strategygames.format.{ FEN, Uci }
 import java.util.concurrent.ConcurrentHashMap
 import lila.ws.ipc._
 import lila.ws.{ Clock, Position }
@@ -62,11 +62,11 @@ object Fens {
         (json.value match {
           case MoveClockRegex(uciS, fenS, wcS, bcS) =>
             for {
-              uci <- Uci(uciS)
+              uci <- Uci(GameLib.Chess(), uciS)
               wc  <- wcS.toIntOption
               bc  <- bcS.toIntOption
-            } yield Position(uci, FEN(fenS), Some(Clock(wc, bc)), turnColor)
-          case MoveRegex(uciS, fenS) => Uci(uciS) map { Position(_, FEN(fenS), None, turnColor) }
+            } yield Position(uci, FEN(GameLib.Chess(), fenS), Some(Clock(wc, bc)), turnColor)
+          case MoveRegex(uciS, fenS) => Uci(GameLib.Chess(), uciS) map { Position(_, FEN(GameLib.Chess(), fenS), None, turnColor) }
           case _                     => None
         }).fold(watched) { position =>
           val msg = ClientIn.Fen(gameId, position)
