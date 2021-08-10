@@ -133,7 +133,7 @@ object ClientOut {
                 path <- d str "path"
                 fen  <- d str "fen"
                 variant = dataVariant(d)
-              } yield Opening(variant, Path(path), FEN(GameLib.Chess(), fen))
+              } yield Opening(variant, Path(path), FEN(variant.gameLib, fen))
             case "anaMove" =>
               for {
                 d    <- o obj "d"
@@ -143,8 +143,8 @@ object ClientOut {
                 fen  <- d str "fen"
                 variant   = dataVariant(d)
                 chapterId = d str "ch" map ChapterId.apply
-                promotion = d str "promotion" flatMap (r => Role.promotable(GameLib.Chess(), r))
-              } yield AnaMove(orig, dest, FEN(GameLib.Chess(), fen), Path(path), variant, chapterId, promotion, o)
+                promotion = d str "promotion" flatMap (r => Role.promotable(variant.gameLib, r))
+              } yield AnaMove(orig, dest, FEN(variant.gameLib, fen), Path(path), variant, chapterId, promotion, o)
             case "anaDrop" =>
               for {
                 d    <- o obj "d"
@@ -154,7 +154,7 @@ object ClientOut {
                 fen  <- d str "fen"
                 variant   = dataVariant(d)
                 chapterId = d str "ch" map ChapterId.apply
-              } yield AnaDrop(role, pos, FEN(GameLib.Chess(), fen), Path(path), variant, chapterId, o)
+              } yield AnaDrop(role, pos, FEN(variant.gameLib, fen), Path(path), variant, chapterId, o)
             case "anaDests" =>
               for {
                 d    <- o obj "d"
@@ -162,7 +162,7 @@ object ClientOut {
                 fen  <- d str "fen"
                 variant   = dataVariant(d)
                 chapterId = d str "ch" map ChapterId.apply
-              } yield AnaDests(FEN(GameLib.Chess(), fen), Path(path), variant, chapterId)
+              } yield AnaDests(FEN(variant.gameLib, fen), Path(path), variant, chapterId)
             case "evalGet" | "evalPut" => Some(SiteForward(o))
             case "msgType"             => o str "d" map MsgType.apply
             case "msgSend" | "msgRead" => Some(UserForward(o))

@@ -3,7 +3,7 @@ package lila.ws
 import play.api.libs.json._
 import strategygames.format.{ FEN, Forsyth, Uci, UciCharPair }
 import strategygames.opening.{ FullOpening, FullOpeningDB }
-import strategygames.{ Game, GameLib, Pos, Role }
+import strategygames.{ Game, Pos, Role }
 import strategygames.variant.Variant
 import strategygames.chess.variant.Crazyhouse
 import com.typesafe.scalalogging.Logger
@@ -15,15 +15,18 @@ object Chess {
 
   private val logger = Logger(getClass)
 
-  private val lib = GameLib.Chess()
-
   def apply(req: ClientOut.AnaMove): ClientIn =
     Monitor.time(_.chessMoveTime) {
       try {
-        Game(lib, req.variant.some, Some(req.fen))(req.orig, req.dest, req.promotion)
+        Game(req.variant.gameLib, req.variant.some, Some(req.fen))(req.orig, req.dest, req.promotion)
           .toOption flatMap { case (game, move) =>
           game.pgnMoves.lastOption map { san =>
-            makeNode(game, Uci.WithSan(lib, Uci(lib, move), san), req.path, req.chapterId)
+            makeNode(
+              game,
+              Uci.WithSan(req.variant.gameLib, Uci(req.variant.gameLib, move), san),
+              req.path,
+              req.chapterId
+            )
           }
         } getOrElse ClientIn.StepFailure
       } catch {
@@ -36,14 +39,14 @@ object Chess {
   def apply(req: ClientOut.AnaDrop): ClientIn =
     Monitor.time(_.chessMoveTime) {
       try {
-        (Game(lib, req.variant.some, Some(req.fen)), req.role, req.pos) match {
+        (Game(req.variant.gameLib, req.variant.some, Some(req.fen)), req.role, req.pos) match {
           case (Game.Chess(game), Role.ChessRole(role), Pos.Chess(pos))
             => game.drop(role, pos).toOption flatMap {
               case (game, drop) =>
                 Game.Chess(game).pgnMoves.lastOption map { san =>
                   makeNode(
                     Game.Chess(game),
-                    Uci.WithSan(lib, Uci(lib, drop), san),
+                    Uci.WithSan(req.variant.gameLib, Uci(req.variant.gameLib, drop), san),
                     req.path,
                     req.chapterId
                   )
@@ -63,16 +66,16 @@ object Chess {
       ClientIn.Dests(
         path = req.path,
         dests = {
-          if (req.variant.standard && req.fen == Forsyth.initial(lib) && req.path.value.isEmpty)
+          if (req.variant.standard && req.fen == Forsyth.initial(req.variant.gameLib) && req.path.value.isEmpty)
             initialDests
           else {
-            val sit = Game(lib, req.variant.some, Some(req.fen)).situation
+            val sit = Game(req.variant.gameLib, req.variant.some, Some(req.fen)).situation
             if (sit.playable(false)) json.destString(sit.destinations) else ""
           }
         },
         opening = {
-          if (Variant.openingSensibleVariants(lib)(req.variant))
-            FullOpeningDB.findByFen(lib, req.fen)
+          if (Variant.openingSensibleVariants(req.variant.gameLib)(req.variant))
+            FullOpeningDB.findByFen(req.variant.gameLib, req.fen)
           else None
         },
         chapterId = req.chapterId
@@ -80,8 +83,8 @@ object Chess {
     }
 
   def apply(req: ClientOut.Opening): Option[ClientIn.Opening] =
-    if (Variant.openingSensibleVariants(lib)(req.variant))
-      FullOpeningDB.findByFen(lib, req.fen) map {ClientIn.Opening(req.path, _)}
+    if (Variant.openingSensibleVariants(req.variant.gameLib)(req.variant))
+      FullOpeningDB.findByFen(req.variant.gameLib, req.fen) map {ClientIn.Opening(req.path, _)}
     else None
 
   private def makeNode(
@@ -91,18 +94,18 @@ object Chess {
       chapterId: Option[ChapterId]
   ): ClientIn.Node = {
     val movable = game.situation playable false
-    val fen     = Forsyth.>>(lib, game)
+    val fen     = Forsyth.>>(game.board.variant.gameLib, game)
     ClientIn.Node(
       path = path,
-      id = UciCharPair(lib, move.uci),
+      id = UciCharPair(game.board.variant.gameLib, move.uci),
       ply = game.turns,
       move = move,
       fen = fen,
       check = game.situation.check,
       dests = if (movable) game.situation.destinations else Map.empty,
       opening =
-        if (game.turns <= 30 && Variant.openingSensibleVariants(lib)(game.board.variant))
-          FullOpeningDB.findByFen(lib, fen)
+        if (game.turns <= 30 && Variant.openingSensibleVariants(game.board.variant.gameLib)(game.board.variant))
+          FullOpeningDB.findByFen(game.board.variant.gameLib, fen)
         else None,
       drops = if (movable) game.situation.drops else Some(Nil),
       crazyData = game.situation.board.crazyData,
