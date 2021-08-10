@@ -38,6 +38,8 @@ object ClientOut {
       variant: Variant,
       chapterId: Option[ChapterId],
       promotion: Option[PromotableRole],
+      uci: Option[String],
+      fullCapture: Option[Boolean],
       payload: JsObject
   ) extends ClientOutSite
 
@@ -55,7 +57,10 @@ object ClientOut {
       fen: FEN,
       path: Path,
       variant: Variant,
-      chapterId: Option[ChapterId]
+      chapterId: Option[ChapterId],
+      uci: Option[String],
+      lastUci: Option[String],
+      fullCapture: Option[Boolean]
   ) extends ClientOutSite
 
   case class MsgType(dest: User.ID) extends ClientOutSite
@@ -144,7 +149,20 @@ object ClientOut {
                 variant   = dataVariant(d)
                 chapterId = d str "ch" map ChapterId.apply
                 promotion = d str "promotion" flatMap (r => Role.promotable(variant.gameLib, r))
-              } yield AnaMove(orig, dest, FEN(variant.gameLib, fen), Path(path), variant, chapterId, promotion, o)
+                uci         = d str "uci"
+                fullCapture = d boolean "fullCapture"
+              } yield AnaMove(
+                orig,
+                dest,
+                FEN(variant.gameLib, fen),
+                Path(path),
+                variant,
+                chapterId,
+                promotion,
+                uci,
+                fullCapture,
+                o
+              )
             case "anaDrop" =>
               for {
                 d    <- o obj "d"
@@ -154,7 +172,15 @@ object ClientOut {
                 fen  <- d str "fen"
                 variant   = dataVariant(d)
                 chapterId = d str "ch" map ChapterId.apply
-              } yield AnaDrop(role, pos, FEN(variant.gameLib, fen), Path(path), variant, chapterId, o)
+              } yield AnaDrop(
+                role,
+                pos,
+                FEN(variant.gameLib, fen),
+                Path(path),
+                variant,
+                chapterId,
+                o
+              )
             case "anaDests" =>
               for {
                 d    <- o obj "d"
@@ -162,7 +188,18 @@ object ClientOut {
                 fen  <- d str "fen"
                 variant   = dataVariant(d)
                 chapterId = d str "ch" map ChapterId.apply
-              } yield AnaDests(FEN(variant.gameLib, fen), Path(path), variant, chapterId)
+                uci         = d str "uci"
+                lastUci     = d str "lastUci"
+                fullCapture = d boolean "fullCapture"
+              } yield AnaDests(
+                FEN(variant.gameLib, fen),
+                Path(path),
+                variant,
+                chapterId,
+                uci,
+                lastUci,
+                fullCapture
+              )
             case "evalGet" | "evalPut" => Some(SiteForward(o))
             case "msgType"             => o str "d" map MsgType.apply
             case "msgSend" | "msgRead" => Some(UserForward(o))

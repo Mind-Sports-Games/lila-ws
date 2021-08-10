@@ -143,6 +143,8 @@ object ClientIn {
       fen: FEN,
       check: Boolean,
       dests: Map[Pos, List[Pos]],
+      destsUci: Option[List[String]],
+      captureLength: Option[Int],
       opening: Option[FullOpening],
       drops: Option[List[Pos]],
       crazyData: Option[Crazyhouse.Data],
@@ -162,9 +164,11 @@ object ClientIn {
                 "uci"      -> move.uci,
                 "san"      -> move.san,
                 "dests"    -> dests,
+                "destsUci" -> destsUci,
                 "children" -> JsArray()
               )
               .add("opening" -> opening)
+              .add("captLen" -> captureLength)
               .add("check" -> check)
               .add("drops" -> drops.map { drops =>
                 JsString(drops.map(_.key).mkString)
@@ -179,7 +183,8 @@ object ClientIn {
       path: Path,
       dests: String,
       opening: Option[FullOpening],
-      chapterId: Option[ChapterId]
+      chapterId: Option[ChapterId],
+      destsUci: Option[List[String]]
   ) extends ClientIn {
     def write =
       cliMsg(
@@ -191,6 +196,7 @@ object ClientIn {
           )
           .add("opening" -> opening)
           .add("ch" -> chapterId)
+          .add("destsUci", destsUci)
       )
   }
 
