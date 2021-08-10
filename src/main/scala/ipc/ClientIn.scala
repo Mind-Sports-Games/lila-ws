@@ -3,7 +3,7 @@ package ipc
 
 import strategygames.{ Color, Pos }
 import strategygames.format.{ FEN, Uci, UciCharPair }
-import strategygames.chess.opening.FullOpening
+import strategygames.opening.FullOpening
 import strategygames.chess.variant.Crazyhouse
 import lila.ws.Position
 import lila.ws.util.LilaJsObject.augment

@@ -2,7 +2,7 @@ package lila.ws
 
 import play.api.libs.json._
 import strategygames.format.{ FEN, Forsyth, Uci, UciCharPair }
-import strategygames.chess.opening.{ FullOpening, FullOpeningDB }
+import strategygames.opening.{ FullOpening, FullOpeningDB }
 import strategygames.{ Game, GameLib, Pos, Role }
 import strategygames.variant.Variant
 import strategygames.chess.variant.Crazyhouse
@@ -71,10 +71,8 @@ object Chess {
           }
         },
         opening = {
-          if (Variant.openingSensibleVariants(lib)(req.variant)) req.fen match {
-            case FEN.Chess(fen) => FullOpeningDB findByFen fen
-            case _ => sys.error("Invalid fen lib")
-          }
+          if (Variant.openingSensibleVariants(lib)(req.variant))
+            FullOpeningDB.findByFen(lib, req.fen)
           else None
         },
         chapterId = req.chapterId
@@ -83,10 +81,7 @@ object Chess {
 
   def apply(req: ClientOut.Opening): Option[ClientIn.Opening] =
     if (Variant.openingSensibleVariants(lib)(req.variant))
-      req.fen match {
-        case FEN.Chess(fen) => FullOpeningDB findByFen fen map {ClientIn.Opening(req.path, _)}
-        case _ => sys.error("Invalid fen lib")
-      }
+      FullOpeningDB.findByFen(lib, req.fen) map {ClientIn.Opening(req.path, _)}
     else None
 
   private def makeNode(
@@ -107,10 +102,7 @@ object Chess {
       dests = if (movable) game.situation.destinations else Map.empty,
       opening =
         if (game.turns <= 30 && Variant.openingSensibleVariants(lib)(game.board.variant))
-          fen match {
-            case FEN.Chess(fen) => FullOpeningDB findByFen fen
-            case _ => sys.error("Invalid fen lib")
-          }
+          FullOpeningDB.findByFen(lib, fen)
         else None,
       drops = if (movable) game.situation.drops else Some(Nil),
       crazyData = game.situation.board.crazyData,
