@@ -54,20 +54,20 @@ object Fens {
     )
 
   // move coming from the server
-  def move(gameLib: GameLib, gameId: Game.Id, json: JsonString, moveBy: Option[Color]): Unit =
+  def move(gameId: Game.Id, json: JsonString, moveBy: Option[Color]): Unit =
     games.computeIfPresent(
       gameId,
       (_, watched) => {
         val turnColor = moveBy.fold(Color.white)(c => !c)
         (json.value match {
-          case MoveClockRegex(uciS, fenS, wcS, bcS) =>
+          case MoveClockRegex(uciS, fenS, lib, wcS, bcS) =>
             for {
-              uci <- Uci(gameLib, uciS)
+              uci <- Uci(GameLib(lib.toInt), uciS)
               wc  <- wcS.toIntOption
               bc  <- bcS.toIntOption
-            } yield Position(uci, FEN(gameLib, fenS), Some(Clock(wc, bc)), turnColor)
-          case MoveRegex(uciS, fenS) => Uci(gameLib, uciS) map {
-            Position(_, FEN(gameLib, fenS), None, turnColor)
+            } yield Position(uci, FEN(GameLib(lib.toInt), fenS), Some(Clock(wc, bc)), turnColor)
+          case MoveRegex(uciS, fenS, lib) => Uci(GameLib(lib.toInt), uciS) map {
+            Position(_, FEN(GameLib(lib.toInt), fenS), None, turnColor)
           }
           case _                     => None
         }).fold(watched) { position =>
@@ -78,9 +78,9 @@ object Fens {
       }
     )
 
-  // ...,"uci":"h2g2","san":"Rg2","fen":"r2qb1k1/p2nbrpn/6Np/3pPp1P/1ppP1P2/2P1B3/PP2B1R1/R2Q1NK1",...,"clock":{"white":121.88,"black":120.94}
-  private val MoveRegex      = """uci":"([^"]+)".+fen":"([^"]+)""".r.unanchored
-  private val MoveClockRegex = """uci":"([^"]+)".+fen":"([^"]+).+white":(\d+).+black":(\d+)""".r.unanchored
+  // ...,"uci":"h2g2","san":"Rg2","fen":"r2qb1k1/p2nbrpn/6Np/3pPp1P/1ppP1P2/2P1B3/PP2B1R1/R2Q1NK1",...,"lib":0,...,"clock":{"white":121.88,"black":120.94}
+  private val MoveRegex      = """uci":"([^"]+)".+fen":"([^"]+).+lib":(\d+)""".r.unanchored
+  private val MoveClockRegex = """uci":"([^"]+)".+fen":"([^"]+).+lib":(\d+).+white":(\d+).+black":(\d+)""".r.unanchored
 
   def size = games.size
 }
