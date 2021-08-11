@@ -1,7 +1,7 @@
 package lila.ws
 package ipc
 
-import strategygames.{ Black, Color, White, Speed }
+import strategygames.{ Black, Color, GameLib, White, Speed }
 
 sealed trait LilaOut
 
@@ -79,6 +79,7 @@ object LilaOut {
   // round
 
   case class RoundVersion(
+      lib: GameLib,
       gameId: Game.Id,
       version: SocketVersion,
       flags: RoundEventFlags,
@@ -118,7 +119,7 @@ object LilaOut {
       case "mlat" => args.toDoubleOption map Mlat.apply
 
       case "r/ver" =>
-        get(args, 5) { case Array(roomId, version, f, tpe, data) =>
+        get(args, 6) { case Array(lib, roomId, version, f, tpe, data) =>
           version.toIntOption map { sv =>
             val flags = RoundEventFlags(
               watcher = f contains 's',
@@ -133,7 +134,7 @@ object LilaOut {
                 else None,
               troll = f contains 't'
             )
-            RoundVersion(Game.Id(roomId), SocketVersion(sv), flags, tpe, JsonString(data))
+            RoundVersion(GameLib(lib.toInt), Game.Id(roomId), SocketVersion(sv), flags, tpe, JsonString(data))
           }
         }
 

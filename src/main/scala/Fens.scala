@@ -54,7 +54,7 @@ object Fens {
     )
 
   // move coming from the server
-  def move(gameId: Game.Id, json: JsonString, moveBy: Option[Color]): Unit =
+  def move(gameLib: GameLib, gameId: Game.Id, json: JsonString, moveBy: Option[Color]): Unit =
     games.computeIfPresent(
       gameId,
       (_, watched) => {
@@ -62,11 +62,13 @@ object Fens {
         (json.value match {
           case MoveClockRegex(uciS, fenS, wcS, bcS) =>
             for {
-              uci <- Uci(GameLib.Chess(), uciS)
+              uci <- Uci(gameLib, uciS)
               wc  <- wcS.toIntOption
               bc  <- bcS.toIntOption
-            } yield Position(uci, FEN(GameLib.Chess(), fenS), Some(Clock(wc, bc)), turnColor)
-          case MoveRegex(uciS, fenS) => Uci(GameLib.Chess(), uciS) map { Position(_, FEN(GameLib.Chess(), fenS), None, turnColor) }
+            } yield Position(uci, FEN(gameLib, fenS), Some(Clock(wc, bc)), turnColor)
+          case MoveRegex(uciS, fenS) => Uci(gameLib, uciS) map {
+            Position(_, FEN(gameLib, fenS), None, turnColor)
+          }
           case _                     => None
         }).fold(watched) { position =>
           val msg = ClientIn.Fen(gameId, position)

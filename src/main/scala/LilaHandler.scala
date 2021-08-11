@@ -125,11 +125,11 @@ final class LilaHandler(
     implicit def gameRoomId(gameId: Game.Id): RoomId = RoomId(gameId)
     implicit def roomGameId(roomId: RoomId): Game.Id = Game.Id(roomId.value)
     ({
-      case RoundVersion(gameId, version, flags, tpe, data) =>
+      case RoundVersion(gameLib, gameId, version, flags, tpe, data) =>
         val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
         History.round.add(gameId, versioned)
         publish(_ room gameId, versioned)
-        if (tpe == "move" || tpe == "drop") Fens.move(gameId, data, flags.moveBy)
+        if (tpe == "move" || tpe == "drop") Fens.move(gameLib, gameId, data, flags.moveBy)
       case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
       case RoundResyncPlayer(fullId) =>
         publish(_ room RoomId(fullId.gameId), ClientIn.RoundResyncPlayer(fullId.playerId))

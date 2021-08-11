@@ -137,24 +137,26 @@ object ClientOut {
                 d    <- o obj "d"
                 path <- d str "path"
                 fen  <- d str "fen"
-                variant = dataVariant(d)
-              } yield Opening(variant, Path(path), FEN(variant.gameLib, fen))
+                lib     = dataGameLib(d)
+                variant = dataVariant(d, lib)
+              } yield Opening(variant, Path(path), FEN(lib, fen))
             case "anaMove" =>
               for {
                 d    <- o obj "d"
-                orig <- d str "orig" flatMap (p => Pos.fromKey(GameLib.Chess(), p))
-                dest <- d str "dest" flatMap (p => Pos.fromKey(GameLib.Chess(), p))
+                lib  =  dataGameLib(d)
+                orig <- d str "orig" flatMap (p => Pos.fromKey(lib, p))
+                dest <- d str "dest" flatMap (p => Pos.fromKey(lib, p))
                 path <- d str "path"
                 fen  <- d str "fen"
-                variant   = dataVariant(d)
+                variant   = dataVariant(d, lib)
                 chapterId = d str "ch" map ChapterId.apply
-                promotion = d str "promotion" flatMap (r => Role.promotable(variant.gameLib, r))
+                promotion = d str "promotion" flatMap (r => Role.promotable(lib, r))
                 uci         = d str "uci"
                 fullCapture = d boolean "fullCapture"
               } yield AnaMove(
                 orig,
                 dest,
-                FEN(variant.gameLib, fen),
+                FEN(lib, fen),
                 Path(path),
                 variant,
                 chapterId,
@@ -166,16 +168,17 @@ object ClientOut {
             case "anaDrop" =>
               for {
                 d    <- o obj "d"
-                role <- d str "role" flatMap Role.allByName(GameLib.Chess()).get
-                pos  <- d str "pos" flatMap (p => Pos.fromKey(GameLib.Chess(), p))
+                lib  =  GameLib.Chess()
+                role <- d str "role" flatMap Role.allByName(lib).get
+                pos  <- d str "pos" flatMap (p => Pos.fromKey(lib, p))
                 path <- d str "path"
                 fen  <- d str "fen"
-                variant   = dataVariant(d)
+                variant   = dataVariant(d, lib)
                 chapterId = d str "ch" map ChapterId.apply
               } yield AnaDrop(
                 role,
                 pos,
-                FEN(variant.gameLib, fen),
+                FEN(lib, fen),
                 Path(path),
                 variant,
                 chapterId,
@@ -186,13 +189,14 @@ object ClientOut {
                 d    <- o obj "d"
                 path <- d str "path"
                 fen  <- d str "fen"
-                variant   = dataVariant(d)
+                lib       = dataGameLib(d)
+                variant   = dataVariant(d, lib)
                 chapterId = d str "ch" map ChapterId.apply
                 uci         = d str "uci"
                 lastUci     = d str "lastUci"
                 fullCapture = d boolean "fullCapture"
               } yield AnaDests(
-                FEN(variant.gameLib, fen),
+                FEN(lib, fen),
                 Path(path),
                 variant,
                 chapterId,
@@ -219,7 +223,8 @@ object ClientOut {
             case "move" =>
               for {
                 d    <- o obj "d"
-                move <- d str "u" flatMap (m => Uci.Move.apply(GameLib.Chess(), m)) orElse parseOldMove(d)
+                lib  =  dataGameLib(d)
+                move <- d str "u" flatMap (m => Uci.Move.apply(lib, m)) orElse parseOldMove(d, lib)
                 blur  = d int "b" contains 1
                 ackId = d int "a"
               } yield RoundMove(move, blur, parseMetrics(d), ackId)
@@ -228,7 +233,7 @@ object ClientOut {
                 d    <- o obj "d"
                 role <- d str "role"
                 pos  <- d str "pos"
-                drop <- Uci.Drop.fromStrings(GameLib.Chess(), role, pos)
+                drop <- Uci.Drop.fromStrings(dataGameLib(d), role, pos)
                 blur  = d int "b" contains 1
                 ackId = d int "a"
               } yield RoundMove(drop, blur, parseMetrics(d), ackId)
@@ -276,15 +281,18 @@ object ClientOut {
 
   private val emptyPing: Try[ClientOut] = Success(Ping(None))
 
-  private def dataVariant(d: JsObject): Variant =
-    Variant.orDefault(GameLib.Chess(), d str "variant" getOrElse "")
+  private def dataGameLib(d: JsObject): GameLib =
+    GameLib(d int "lib" getOrElse 0)
 
-  private def parseOldMove(d: JsObject) =
+  private def dataVariant(d: JsObject, lib: GameLib): Variant =
+    Variant.orDefault(lib, d str "variant" getOrElse "")
+
+  private def parseOldMove(d: JsObject, lib: GameLib) =
     for {
       orig <- d str "from"
       dest <- d str "to"
       prom = d str "promotion"
-      move <- Uci.Move.fromStrings(GameLib.Chess(), orig, dest, prom)
+      move <- Uci.Move.fromStrings(lib, orig, dest, prom)
     } yield move
 
   private def parseMetrics(d: JsObject) =
