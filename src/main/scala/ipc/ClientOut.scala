@@ -86,13 +86,19 @@ object ClientOut {
 
   // round
 
-  case class RoundPlayerForward(payload: JsValue)                                     extends ClientOutRound
-  case class RoundMove(uci: Uci, blur: Boolean, lag: MoveMetrics, ackId: Option[Int]) extends ClientOutRound
-  case class RoundHold(mean: Int, sd: Int)                                            extends ClientOutRound
-  case class RoundBerserk(ackId: Option[Int])                                         extends ClientOutRound
-  case class RoundSelfReport(name: String)                                            extends ClientOutRound
-  case class RoundFlag(color: Color)                                                  extends ClientOutRound
-  case object RoundBye                                                                extends ClientOutRound
+  case class RoundPlayerForward(payload: JsValue) extends ClientOutRound
+  case class RoundMove(
+    lib: GameLib,
+    uci: Uci,
+    blur: Boolean,
+    lag: MoveMetrics,
+    ackId: Option[Int]
+  ) extends ClientOutRound
+  case class RoundHold(mean: Int, sd: Int)    extends ClientOutRound
+  case class RoundBerserk(ackId: Option[Int]) extends ClientOutRound
+  case class RoundSelfReport(name: String)    extends ClientOutRound
+  case class RoundFlag(color: Color)          extends ClientOutRound
+  case object RoundBye                        extends ClientOutRound
 
   // chat
 
@@ -227,7 +233,7 @@ object ClientOut {
                 move <- d str "u" flatMap (m => Uci.Move.apply(lib, m)) orElse parseOldMove(d, lib)
                 blur  = d int "b" contains 1
                 ackId = d int "a"
-              } yield RoundMove(move, blur, parseMetrics(d), ackId)
+              } yield RoundMove(lib, move, blur, parseMetrics(d), ackId)
             case "drop" =>
               for {
                 d    <- o obj "d"
@@ -236,7 +242,7 @@ object ClientOut {
                 drop <- Uci.Drop.fromStrings(dataGameLib(d), role, pos)
                 blur  = d int "b" contains 1
                 ackId = d int "a"
-              } yield RoundMove(drop, blur, parseMetrics(d), ackId)
+              } yield RoundMove(GameLib.Chess(), drop, blur, parseMetrics(d), ackId)
             case "hold" =>
               for {
                 d    <- o obj "d"
