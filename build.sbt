@@ -35,6 +35,8 @@ libraryDependencies += "com.roundeights"            %% "hasher"                 
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/Mind-Sports-Games/lila-maven/master"
+resolvers += "lila-maven-ci" at "file:///home/runner/work/lila/lila/deps/lila-maven/"
+resolvers += "lila-maven-local" at "file://" + System.getProperty("user.dir") + "/../lila-maven/"
 
 scalacOptions ++= Seq(
   "-explaintypes",
