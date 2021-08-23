@@ -38,7 +38,7 @@ jobs:
         with:
           name: lila-ws
           path: lila-ws-3.0.tar.xz
-      - name: Copy file to prod server
+      - name: Master -- Copy file to server
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         uses: appleboy/scp-action@master
         with:
@@ -47,7 +47,7 @@ jobs:
           key: ${{ secrets.MSO_CI_SSH_KEY }}
           source: 'lila-ws-3.0.tar.xz'
           target: '/tmp/'
-      - name: Upgrade prod application
+      - name: Master -- Upgrade application
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         uses: garygrossgarten/github-action-ssh@release
         with:
@@ -55,7 +55,7 @@ jobs:
           host: ${{ secrets.PS_MAIN_HOST }}
           username: ${{ secrets.PS_MAIN_USERNAME }}
           privateKey: ${{ secrets.MSO_CI_SSH_KEY }}
-      - name: Copy file to dev server
+      - name: Dev -- Copy file to server
         if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
         uses: appleboy/scp-action@master
         with:
@@ -64,7 +64,7 @@ jobs:
           key: ${{ secrets.MSO_CI_SSH_KEY }}
           source: 'lila-ws-3.0.tar.xz'
           target: '/tmp/'
-      - name: Upgrade dev application
+      - name: Dev -- Upgrade application
         if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
         uses: garygrossgarten/github-action-ssh@release
         with:
