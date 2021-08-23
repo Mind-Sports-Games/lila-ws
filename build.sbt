@@ -34,7 +34,7 @@ libraryDependencies += "com.softwaremill.macwire"   %% "macros"                 
 libraryDependencies += "com.roundeights"            %% "hasher"                       % "1.2.1"
 
 resolvers += Resolver.sonatypeRepo("snapshots")
-resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
+resolvers += "lila-maven" at "https://raw.githubusercontent.com/Mind-Sports-Games/lila-maven/master"
 
 scalacOptions ++= Seq(
   "-explaintypes",
