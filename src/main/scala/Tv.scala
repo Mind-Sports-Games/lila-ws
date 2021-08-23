@@ -1,5 +1,6 @@
 package lila.ws
 
+import strategygames.Speed
 import com.github.blemale.scaffeine.{ Cache, Scaffeine }
 import scala.concurrent.duration._
 
@@ -22,7 +23,7 @@ object Tv {
         Bus.publish(_ room RoomId(gameId), cliMsg)
       }
     }
-    (if (out.speed <= chess.Speed.Bullet) fast else slow).put(out.gameId.value, true)
+    (if (out.speed <= Speed.Bullet) fast else slow).put(out.gameId.value, true)
   }
 
   def get(gameId: Game.Id): Boolean = get(gameId, fast) || get(gameId, slow)

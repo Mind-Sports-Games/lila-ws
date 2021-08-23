@@ -1,10 +1,10 @@
 package lila.ws
 package ipc
 
-import chess.Color
-import chess.format.UciCharPair
-import chess.opening.FullOpening
-import chess.variant.Crazyhouse
+import strategygames.{ Color, Pos }
+import strategygames.format.{ FEN, Uci, UciCharPair }
+import strategygames.opening.FullOpening
+import strategygames.chess.variant.Crazyhouse
 import lila.ws.Position
 import lila.ws.util.LilaJsObject.augment
 import play.api.libs.json._
@@ -139,12 +139,14 @@ object ClientIn {
       path: Path,
       id: UciCharPair,
       ply: Int,
-      move: chess.format.Uci.WithSan,
-      fen: chess.format.FEN,
+      move: Uci.WithSan,
+      fen: FEN,
       check: Boolean,
-      dests: Map[chess.Pos, List[chess.Pos]],
-      opening: Option[chess.opening.FullOpening],
-      drops: Option[List[chess.Pos]],
+      dests: Map[Pos, List[Pos]],
+      destsUci: Option[List[String]],
+      captureLength: Option[Int],
+      opening: Option[FullOpening],
+      drops: Option[List[Pos]],
       crazyData: Option[Crazyhouse.Data],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
@@ -162,9 +164,11 @@ object ClientIn {
                 "uci"      -> move.uci,
                 "san"      -> move.san,
                 "dests"    -> dests,
+                "destsUci" -> destsUci,
                 "children" -> JsArray()
               )
               .add("opening" -> opening)
+              .add("captLen" -> captureLength)
               .add("check" -> check)
               .add("drops" -> drops.map { drops =>
                 JsString(drops.map(_.key).mkString)
@@ -178,8 +182,9 @@ object ClientIn {
   case class Dests(
       path: Path,
       dests: String,
-      opening: Option[chess.opening.FullOpening],
-      chapterId: Option[ChapterId]
+      opening: Option[FullOpening],
+      chapterId: Option[ChapterId],
+      destsUci: Option[List[String]]
   ) extends ClientIn {
     def write =
       cliMsg(
@@ -191,6 +196,7 @@ object ClientIn {
           )
           .add("opening" -> opening)
           .add("ch" -> chapterId)
+          .add("destsUci", destsUci)
       )
   }
 

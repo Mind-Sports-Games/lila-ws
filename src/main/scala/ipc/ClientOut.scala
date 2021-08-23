@@ -1,9 +1,9 @@
 package lila.ws
 package ipc
 
-import chess.format.{ FEN, Uci }
-import chess.variant.Variant
-import chess.{ Centis, Color, MoveMetrics, Pos }
+import strategygames.format.{ FEN, Uci }
+import strategygames.variant.Variant
+import strategygames.{ Centis, Color, GameLib, MoveMetrics, Pos, PromotableRole, Role }
 import lila.ws.util.LilaJsObject.augment
 import play.api.libs.json._
 import scala.util.{ Success, Try }
@@ -37,12 +37,14 @@ object ClientOut {
       path: Path,
       variant: Variant,
       chapterId: Option[ChapterId],
-      promotion: Option[chess.PromotableRole],
+      promotion: Option[PromotableRole],
+      uci: Option[String],
+      fullCapture: Option[Boolean],
       payload: JsObject
   ) extends ClientOutSite
 
   case class AnaDrop(
-      role: chess.Role,
+      role: Role,
       pos: Pos,
       fen: FEN,
       path: Path,
@@ -55,7 +57,10 @@ object ClientOut {
       fen: FEN,
       path: Path,
       variant: Variant,
-      chapterId: Option[ChapterId]
+      chapterId: Option[ChapterId],
+      uci: Option[String],
+      lastUci: Option[String],
+      fullCapture: Option[Boolean]
   ) extends ClientOutSite
 
   case class MsgType(dest: User.ID) extends ClientOutSite
@@ -81,13 +86,19 @@ object ClientOut {
 
   // round
 
-  case class RoundPlayerForward(payload: JsValue)                                     extends ClientOutRound
-  case class RoundMove(uci: Uci, blur: Boolean, lag: MoveMetrics, ackId: Option[Int]) extends ClientOutRound
-  case class RoundHold(mean: Int, sd: Int)                                            extends ClientOutRound
-  case class RoundBerserk(ackId: Option[Int])                                         extends ClientOutRound
-  case class RoundSelfReport(name: String)                                            extends ClientOutRound
-  case class RoundFlag(color: Color)                                                  extends ClientOutRound
-  case object RoundBye                                                                extends ClientOutRound
+  case class RoundPlayerForward(payload: JsValue) extends ClientOutRound
+  case class RoundMove(
+    lib: GameLib,
+    uci: Uci,
+    blur: Boolean,
+    lag: MoveMetrics,
+    ackId: Option[Int]
+  ) extends ClientOutRound
+  case class RoundHold(mean: Int, sd: Int)    extends ClientOutRound
+  case class RoundBerserk(ackId: Option[Int]) extends ClientOutRound
+  case class RoundSelfReport(name: String)    extends ClientOutRound
+  case class RoundFlag(color: Color)          extends ClientOutRound
+  case object RoundBye                        extends ClientOutRound
 
   // chat
 
@@ -132,37 +143,73 @@ object ClientOut {
                 d    <- o obj "d"
                 path <- d str "path"
                 fen  <- d str "fen"
-                variant = dataVariant(d)
-              } yield Opening(variant, Path(path), FEN(fen))
+                lib     = dataGameLib(d)
+                variant = dataVariant(d, lib)
+              } yield Opening(variant, Path(path), FEN(lib, fen))
             case "anaMove" =>
               for {
                 d    <- o obj "d"
-                orig <- d str "orig" flatMap Pos.fromKey
-                dest <- d str "dest" flatMap Pos.fromKey
+                lib  =  dataGameLib(d)
+                orig <- d str "orig" flatMap (p => Pos.fromKey(lib, p))
+                dest <- d str "dest" flatMap (p => Pos.fromKey(lib, p))
                 path <- d str "path"
                 fen  <- d str "fen"
-                variant   = dataVariant(d)
+                variant   = dataVariant(d, lib)
                 chapterId = d str "ch" map ChapterId.apply
-                promotion = d str "promotion" flatMap chess.Role.promotable
-              } yield AnaMove(orig, dest, FEN(fen), Path(path), variant, chapterId, promotion, o)
+                promotion = d str "promotion" flatMap (r => Role.promotable(lib, r))
+                uci         = d str "uci"
+                fullCapture = d boolean "fullCapture"
+              } yield AnaMove(
+                orig,
+                dest,
+                FEN(lib, fen),
+                Path(path),
+                variant,
+                chapterId,
+                promotion,
+                uci,
+                fullCapture,
+                o
+              )
             case "anaDrop" =>
               for {
                 d    <- o obj "d"
-                role <- d str "role" flatMap chess.Role.allByName.get
-                pos  <- d str "pos" flatMap Pos.fromKey
+                lib  =  GameLib.Chess()
+                role <- d str "role" flatMap Role.allByName(lib).get
+                pos  <- d str "pos" flatMap (p => Pos.fromKey(lib, p))
                 path <- d str "path"
                 fen  <- d str "fen"
-                variant   = dataVariant(d)
+                variant   = dataVariant(d, lib)
                 chapterId = d str "ch" map ChapterId.apply
-              } yield AnaDrop(role, pos, FEN(fen), Path(path), variant, chapterId, o)
+              } yield AnaDrop(
+                role,
+                pos,
+                FEN(lib, fen),
+                Path(path),
+                variant,
+                chapterId,
+                o
+              )
             case "anaDests" =>
               for {
                 d    <- o obj "d"
                 path <- d str "path"
                 fen  <- d str "fen"
-                variant   = dataVariant(d)
+                lib       = dataGameLib(d)
+                variant   = dataVariant(d, lib)
                 chapterId = d str "ch" map ChapterId.apply
-              } yield AnaDests(FEN(fen), Path(path), variant, chapterId)
+                uci         = d str "uci"
+                lastUci     = d str "lastUci"
+                fullCapture = d boolean "fullCapture"
+              } yield AnaDests(
+                FEN(lib, fen),
+                Path(path),
+                variant,
+                chapterId,
+                uci,
+                lastUci,
+                fullCapture
+              )
             case "evalGet" | "evalPut" => Some(SiteForward(o))
             case "msgType"             => o str "d" map MsgType.apply
             case "msgSend" | "msgRead" => Some(UserForward(o))
@@ -182,19 +229,20 @@ object ClientOut {
             case "move" =>
               for {
                 d    <- o obj "d"
-                move <- d str "u" flatMap Uci.Move.apply orElse parseOldMove(d)
+                lib  =  dataGameLib(d)
+                move <- d str "u" flatMap (m => Uci.Move.apply(lib, m)) orElse parseOldMove(d, lib)
                 blur  = d int "b" contains 1
                 ackId = d int "a"
-              } yield RoundMove(move, blur, parseMetrics(d), ackId)
+              } yield RoundMove(lib, move, blur, parseMetrics(d), ackId)
             case "drop" =>
               for {
                 d    <- o obj "d"
                 role <- d str "role"
                 pos  <- d str "pos"
-                drop <- Uci.Drop.fromStrings(role, pos)
+                drop <- Uci.Drop.fromStrings(dataGameLib(d), role, pos)
                 blur  = d int "b" contains 1
                 ackId = d int "a"
-              } yield RoundMove(drop, blur, parseMetrics(d), ackId)
+              } yield RoundMove(GameLib.Chess(), drop, blur, parseMetrics(d), ackId)
             case "hold" =>
               for {
                 d    <- o obj "d"
@@ -239,14 +287,18 @@ object ClientOut {
 
   private val emptyPing: Try[ClientOut] = Success(Ping(None))
 
-  private def dataVariant(d: JsObject): Variant = Variant.orDefault(d str "variant" getOrElse "")
+  private def dataGameLib(d: JsObject): GameLib =
+    GameLib(d int "lib" getOrElse 0)
 
-  private def parseOldMove(d: JsObject) =
+  private def dataVariant(d: JsObject, lib: GameLib): Variant =
+    Variant.orDefault(lib, d str "variant" getOrElse "")
+
+  private def parseOldMove(d: JsObject, lib: GameLib) =
     for {
       orig <- d str "from"
       dest <- d str "to"
       prom = d str "promotion"
-      move <- Uci.Move.fromStrings(orig, dest, prom)
+      move <- Uci.Move.fromStrings(lib, orig, dest, prom)
     } yield move
 
   private def parseMetrics(d: JsObject) =

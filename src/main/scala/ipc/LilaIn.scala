@@ -1,8 +1,8 @@
 package lila.ws
 package ipc
 
-import chess.format.Uci
-import chess.{ Centis, Color, MoveMetrics }
+import strategygames.format.Uci
+import strategygames.{ Centis, Color, GameLib, MoveMetrics }
 import play.api.libs.json._
 
 sealed trait LilaIn {
@@ -119,10 +119,10 @@ object LilaIn {
     def write = s"r/do $fullId ${Json.stringify(payload)}"
   }
 
-  case class RoundMove(fullId: Game.FullId, uci: Uci, blur: Boolean, lag: MoveMetrics) extends Round {
+  case class RoundMove(fullId: Game.FullId, lib: GameLib, uci: Uci, blur: Boolean, lag: MoveMetrics) extends Round {
     private def centis(c: Option[Centis]) = optional(c.map(_.centis.toString))
     def write =
-      s"r/move $fullId ${uci.uci} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)}"
+      s"r/move $fullId ${lib.id} ${uci.uci} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)}"
     override def critical = true
   }
 
