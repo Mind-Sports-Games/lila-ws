@@ -1,7 +1,7 @@
 package lila.ws
 package ipc
 
-import chess.Color
+import strategygames.{ Black, Color, GameLib, White, Speed }
 
 sealed trait LilaOut
 
@@ -92,7 +92,7 @@ object LilaOut {
   case class RoundBotOnline(gameId: Game.Id, color: Color, v: Boolean)                extends RoundOut
   case class GameStart(users: List[User.ID])                                          extends RoundOut
   case class GameFinish(gameId: Game.Id, winner: Option[Color], users: List[User.ID]) extends RoundOut
-  case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString)          extends RoundOut
+  case class TvSelect(gameId: Game.Id, speed: Speed, json: JsonString)          extends RoundOut
 
   // racer
 
@@ -124,12 +124,12 @@ object LilaOut {
               watcher = f contains 's',
               owner = f contains 'p',
               player =
-                if (f contains 'w') Some(chess.White)
-                else if (f contains 'b') Some(chess.Black)
+                if (f contains 'w') Some(White)
+                else if (f contains 'b') Some(Black)
                 else None,
               moveBy =
-                if (f contains 'B') Some(chess.Black)
-                else if (f contains 'W') Some(chess.White)
+                if (f contains 'B') Some(Black)
+                else if (f contains 'W') Some(White)
                 else None,
               troll = f contains 't'
             )
@@ -296,7 +296,7 @@ object LilaOut {
 
       case "tv/select" =>
         get(args, 3) { case Array(gameId, speedS, data) =>
-          speedS.toIntOption flatMap chess.Speed.apply map { speed =>
+          speedS.toIntOption flatMap Speed.apply map { speed =>
             TvSelect(Game.Id(gameId), speed, JsonString(data))
           }
         }

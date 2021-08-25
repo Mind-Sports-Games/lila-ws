@@ -1,7 +1,7 @@
 package lila.ws
 
-import chess.Color
-import chess.format.{ FEN, Uci }
+import strategygames.Color
+import strategygames.format.{ FEN, Uci }
 
 trait StringValue extends Any {
   def value: String
@@ -162,8 +162,8 @@ case class ThroughStudyDoor(user: User, through: Either[RoomId, RoomId])
 case class RoundEventFlags(
     watcher: Boolean,
     owner: Boolean,
-    player: Option[chess.Color],
-    moveBy: Option[chess.Color],
+    player: Option[Color],
+    moveBy: Option[Color],
     troll: Boolean
 )
 
