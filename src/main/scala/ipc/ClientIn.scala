@@ -146,7 +146,7 @@ object ClientIn {
       captureLength: Option[Int],
       opening: Option[FullOpening],
       drops: Option[List[Pos]],
-      crazyData: Option[PocketData],
+      pocketData: Option[PocketData],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
     def write =
@@ -172,7 +172,7 @@ object ClientIn {
               .add("drops" -> drops.map { drops =>
                 JsString(drops.map(_.key).mkString)
               })
-              .add("crazy" -> crazyData)
+              .add("crazy" -> pocketData)
           )
           .add("ch" -> chapterId)
       )

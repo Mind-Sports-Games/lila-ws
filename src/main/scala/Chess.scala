@@ -223,7 +223,7 @@ object Chess {
           FullOpeningDB.findByFen(game.board.variant.gameLogic, fen)
         else None,
       drops = if (movable) game.situation.drops else Some(Nil),
-      crazyData = game.situation.board.crazyData,
+      pocketData = game.situation.board.pocketData,
       chapterId = chapterId
     )
   }
