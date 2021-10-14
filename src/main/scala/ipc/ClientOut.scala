@@ -3,7 +3,7 @@ package ipc
 
 import strategygames.format.{ FEN, Uci }
 import strategygames.variant.Variant
-import strategygames.{ Centis, Color, GameLib, MoveMetrics, Pos, PromotableRole, Role }
+import strategygames.{ Centis, Color, GameLogic, MoveMetrics, Pos, PromotableRole, Role }
 import lila.ws.util.LilaJsObject.augment
 import play.api.libs.json._
 import scala.util.{ Success, Try }
@@ -88,7 +88,7 @@ object ClientOut {
 
   case class RoundPlayerForward(payload: JsValue) extends ClientOutRound
   case class RoundMove(
-    lib: GameLib,
+    lib: GameLogic,
     uci: Uci,
     blur: Boolean,
     lag: MoveMetrics,
@@ -143,13 +143,13 @@ object ClientOut {
                 d    <- o obj "d"
                 path <- d str "path"
                 fen  <- d str "fen"
-                lib     = dataGameLib(d)
+                lib     = dataGameLogic(d)
                 variant = dataVariant(d, lib)
               } yield Opening(variant, Path(path), FEN(lib, fen))
             case "anaMove" =>
               for {
                 d    <- o obj "d"
-                lib  =  dataGameLib(d)
+                lib  =  dataGameLogic(d)
                 orig <- d str "orig" flatMap (p => Pos.fromKey(lib, p))
                 dest <- d str "dest" flatMap (p => Pos.fromKey(lib, p))
                 path <- d str "path"
@@ -174,7 +174,7 @@ object ClientOut {
             case "anaDrop" =>
               for {
                 d    <- o obj "d"
-                lib  =  GameLib.Chess()
+                lib  =  dataGameLogic(d)
                 role <- d str "role" flatMap Role.allByName(lib).get
                 pos  <- d str "pos" flatMap (p => Pos.fromKey(lib, p))
                 path <- d str "path"
@@ -195,7 +195,7 @@ object ClientOut {
                 d    <- o obj "d"
                 path <- d str "path"
                 fen  <- d str "fen"
-                lib       = dataGameLib(d)
+                lib       = dataGameLogic(d)
                 variant   = dataVariant(d, lib)
                 chapterId = d str "ch" map ChapterId.apply
                 uci         = d str "uci"
@@ -229,7 +229,7 @@ object ClientOut {
             case "move" =>
               for {
                 d    <- o obj "d"
-                lib  =  dataGameLib(d)
+                lib  =  dataGameLogic(d)
                 move <- d str "u" flatMap (m => Uci.Move.apply(lib, m)) orElse parseOldMove(d, lib)
                 blur  = d int "b" contains 1
                 ackId = d int "a"
@@ -239,10 +239,11 @@ object ClientOut {
                 d    <- o obj "d"
                 role <- d str "role"
                 pos  <- d str "pos"
-                drop <- Uci.Drop.fromStrings(dataGameLib(d), role, pos)
+                lib  =  dataGameLogic(d)
+                drop <- Uci.Drop.fromStrings(lib, role, pos)
                 blur  = d int "b" contains 1
                 ackId = d int "a"
-              } yield RoundMove(GameLib.Chess(), drop, blur, parseMetrics(d), ackId)
+              } yield RoundMove(lib, drop, blur, parseMetrics(d), ackId)
             case "hold" =>
               for {
                 d    <- o obj "d"
@@ -287,13 +288,13 @@ object ClientOut {
 
   private val emptyPing: Try[ClientOut] = Success(Ping(None))
 
-  private def dataGameLib(d: JsObject): GameLib =
-    GameLib(d int "lib" getOrElse 0)
+  private def dataGameLogic(d: JsObject): GameLogic =
+    GameLogic(d int "lib" getOrElse 0)
 
-  private def dataVariant(d: JsObject, lib: GameLib): Variant =
+  private def dataVariant(d: JsObject, lib: GameLogic): Variant =
     Variant.orDefault(lib, d str "variant" getOrElse "")
 
-  private def parseOldMove(d: JsObject, lib: GameLib) =
+  private def parseOldMove(d: JsObject, lib: GameLogic) =
     for {
       orig <- d str "from"
       dest <- d str "to"

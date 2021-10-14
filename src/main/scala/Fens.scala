@@ -1,7 +1,7 @@
 package lila.ws
 
 import akka.actor.typed.ActorRef
-import strategygames.{ Color, GameLib }
+import strategygames.{ Color, GameLogic }
 import strategygames.format.{ FEN, Uci }
 import java.util.concurrent.ConcurrentHashMap
 import lila.ws.ipc._
@@ -62,12 +62,17 @@ object Fens {
         (json.value match {
           case MoveClockRegex(uciS, fenS, lib, wcS, bcS) =>
             for {
-              uci <- Uci(GameLib(lib.toInt), uciS)
+              uci <- Uci(GameLogic(lib.toInt), uciS)
               wc  <- wcS.toIntOption
               bc  <- bcS.toIntOption
-            } yield Position(uci, FEN(GameLib(lib.toInt), fenS), Some(Clock(wc, bc)), turnColor)
-          case MoveRegex(uciS, fenS, lib) => Uci(GameLib(lib.toInt), uciS) map {
-            Position(_, FEN(GameLib(lib.toInt), fenS), None, turnColor)
+            } yield Position(
+              uci,
+              FEN(GameLogic(lib.toInt), fenS),
+              Some(Clock(wc, bc)),
+              turnColor
+            )
+          case MoveRegex(uciS, fenS, lib) => Uci(GameLogic(lib.toInt), uciS) map {
+            Position(_, FEN(GameLogic(lib.toInt), fenS), None, turnColor)
           }
           case _                     => None
         }).fold(watched) { position =>
