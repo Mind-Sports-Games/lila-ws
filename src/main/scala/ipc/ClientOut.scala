@@ -3,7 +3,7 @@ package ipc
 
 import strategygames.format.{ FEN, Uci }
 import strategygames.variant.Variant
-import strategygames.{ Centis, Color, GameLib, MoveMetrics, Pos, PromotableRole, Role }
+import strategygames.{ Centis, Color, GameLogic, MoveMetrics, Pos, PromotableRole, Role }
 import lila.ws.util.LilaJsObject.augment
 import play.api.libs.json._
 import scala.util.{ Success, Try }
@@ -88,7 +88,7 @@ object ClientOut {
 
   case class RoundPlayerForward(payload: JsValue) extends ClientOutRound
   case class RoundMove(
-    lib: GameLib,
+    lib: GameLogic,
     uci: Uci,
     blur: Boolean,
     lag: MoveMetrics,
@@ -174,8 +174,8 @@ object ClientOut {
             case "anaDrop" =>
               for {
                 d    <- o obj "d"
-                lib  =  GameLib.Chess()
-                role <- d str "role" flatMap Role.allByName(lib).get
+                lib  =  GameLogic.Chess()
+                role <- d str "role" flatMap Role.allByGroundName(lib).get
                 pos  <- d str "pos" flatMap (p => Pos.fromKey(lib, p))
                 path <- d str "path"
                 fen  <- d str "fen"
@@ -237,12 +237,13 @@ object ClientOut {
             case "drop" =>
               for {
                 d    <- o obj "d"
-                role <- d str "role"
+                lib  =  dataGameLib(d)
+                role <- d str "role" flatMap {g => Role.allByGroundName(lib).get(g)}
                 pos  <- d str "pos"
-                drop <- Uci.Drop.fromStrings(dataGameLib(d), role, pos)
+                drop <- Uci.Drop.fromStrings(lib, role.name, pos)
                 blur  = d int "b" contains 1
                 ackId = d int "a"
-              } yield RoundMove(GameLib.Chess(), drop, blur, parseMetrics(d), ackId)
+              } yield RoundMove(GameLogic.Chess(), drop, blur, parseMetrics(d), ackId)
             case "hold" =>
               for {
                 d    <- o obj "d"
@@ -287,13 +288,13 @@ object ClientOut {
 
   private val emptyPing: Try[ClientOut] = Success(Ping(None))
 
-  private def dataGameLib(d: JsObject): GameLib =
-    GameLib(d int "lib" getOrElse 0)
+  private def dataGameLib(d: JsObject): GameLogic =
+    GameLogic(d int "lib" getOrElse 0)
 
-  private def dataVariant(d: JsObject, lib: GameLib): Variant =
+  private def dataVariant(d: JsObject, lib: GameLogic): Variant =
     Variant.orDefault(lib, d str "variant" getOrElse "")
 
-  private def parseOldMove(d: JsObject, lib: GameLib) =
+  private def parseOldMove(d: JsObject, lib: GameLogic) =
     for {
       orig <- d str "from"
       dest <- d str "to"

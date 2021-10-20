@@ -1,6 +1,6 @@
 name := "lila-ws"
 
-version := "2.1"
+version := "2.2"
 
 lazy val `lila-ws` = (project in file("."))
   .enablePlugins(JavaAppPackaging)
@@ -19,7 +19,7 @@ libraryDependencies += "io.lettuce"                  % "lettuce-core"           
 libraryDependencies += "io.netty"                    % "netty-handler"                % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-codec-http"             % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
-libraryDependencies += "org.playstrategy"           %% "strategygames"                % "10.2.1-pstrat11"
+libraryDependencies += "org.playstrategy"           %% "strategygames"                % "10.2.1-pstrat16"
 libraryDependencies += "com.typesafe.akka"          %% "akka-actor-typed"             % akkaVersion
 libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"                   % akkaVersion
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"                % "3.9.3"
