@@ -156,7 +156,7 @@ object ClientOut {
                 fen  <- d str "fen"
                 variant   = dataVariant(d, lib)
                 chapterId = d str "ch" map ChapterId.apply
-                promotion = d str "promotion" flatMap (r => Role.promotable(lib, r))
+                promotion = d str "promotion" flatMap (r => Role.promotable(lib, Role.allByGroundName(lib).get(r).map(_.name)))
                 uci         = d str "uci"
                 fullCapture = d boolean "fullCapture"
               } yield AnaMove(
