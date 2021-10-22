@@ -1,7 +1,7 @@
 package lila.ws
 package ipc
 
-import strategygames.{ Black, Color, GameLib, White, Speed }
+import strategygames.{ Black, Color, GameLogic, White, Speed }
 
 sealed trait LilaOut
 
