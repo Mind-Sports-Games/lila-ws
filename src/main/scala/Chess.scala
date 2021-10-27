@@ -339,7 +339,7 @@ object Chess {
           }
           case None => GameLogic.Chess()
         }).flatMap { role =>
-          Some(v.roles.count(role == _)).filter(0 < _).map { count => role.name -> JsNumber(count) }
+          Some(v.roles.count(role == _)).filter(0 < _).map { count => role.groundName -> JsNumber(count) }
         }
       )
     }

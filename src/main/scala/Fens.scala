@@ -65,12 +65,7 @@ object Fens {
               uci <- Uci(GameLogic(lib.toInt), uciS)
               wc  <- wcS.toIntOption
               bc  <- bcS.toIntOption
-            } yield Position(
-              uci,
-              FEN(GameLogic(lib.toInt), fenS),
-              Some(Clock(wc, bc)),
-              turnColor
-            )
+            } yield Position(uci, FEN(GameLogic(lib.toInt), fenS), Some(Clock(wc, bc)), turnColor)
           case MoveRegex(uciS, fenS, lib) => Uci(GameLogic(lib.toInt), uciS) map {
             Position(_, FEN(GameLogic(lib.toInt), fenS), None, turnColor)
           }
