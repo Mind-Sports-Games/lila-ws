@@ -156,7 +156,7 @@ object ClientOut {
                 fen  <- d str "fen"
                 variant   = dataVariant(d, lib)
                 chapterId = d str "ch" map ChapterId.apply
-                promotion = d str "promotion" flatMap (r => Role.promotable(lib, Role.allByGroundName(lib).get(r).map(_.name)))
+                promotion = d str "promotion" flatMap (r => Role.promotable(lib, Role.allByGroundName(lib, variant.gameFamily).get(r).map(_.name)))
                 uci         = d str "uci"
                 fullCapture = d boolean "fullCapture"
               } yield AnaMove(
@@ -175,11 +175,11 @@ object ClientOut {
               for {
                 d    <- o obj "d"
                 lib  =  dataGameLogic(d)
-                role <- d str "role" flatMap Role.allByGroundName(lib).get
+                variant = dataVariant(d, lib)
+                role <- d str "role" flatMap Role.allByGroundName(lib, variant.gameFamily).get
                 pos  <- d str "pos" flatMap (p => Pos.fromKey(lib, p))
                 path <- d str "path"
                 fen  <- d str "fen"
-                variant   = dataVariant(d, lib)
                 chapterId = d str "ch" map ChapterId.apply
               } yield AnaDrop(
                 role,
@@ -237,10 +237,13 @@ object ClientOut {
             case "drop" =>
               for {
                 d    <- o obj "d"
-                lib  =  dataGameLogic(d)
-                role <- d str "role" flatMap {g => Role.allByGroundName(lib).get(g)}
+                lib     =  dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                role <- d str "role" flatMap {
+                  g => Role.allByGroundName(lib, variant.gameFamily).get(g)
+                }
                 pos  <- d str "pos"
-                drop <- Uci.Drop.fromStrings(lib, role.name, pos)
+                drop <- Uci.Drop.fromStrings(lib, variant.gameFamily, role.name, pos)
                 blur  = d int "b" contains 1
                 ackId = d int "a"
               } yield RoundMove(lib, drop, blur, parseMetrics(d), ackId)
