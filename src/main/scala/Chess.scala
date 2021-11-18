@@ -21,7 +21,11 @@ object Chess {
     Monitor.time(_.chessMoveTime) {
       try {
         lazy val fullCaptureFields =
-          req.uci.flatMap(m => Uci.Move.apply(req.variant.gameLogic, m)).flatMap(_.capture)
+          req.uci.flatMap(m => Uci.Move.apply(
+            req.variant.gameLogic,
+            req.variant.gameFamily,
+            m
+          )).flatMap(_.capture)
         Game(req.variant.gameLogic, req.variant.some, Some(req.fen))(
           orig = req.orig,
           dest = req.dest,
