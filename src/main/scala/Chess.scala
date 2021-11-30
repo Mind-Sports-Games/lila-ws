@@ -5,9 +5,8 @@ import scala.collection.MapView
 import play.api.libs.json._
 import strategygames.format.{ FEN, Forsyth, Uci, UciCharPair }
 import strategygames.opening.{ FullOpening, FullOpeningDB }
-import strategygames.{ Game, GameLogic, Pos, Role, Situation }
+import strategygames.{ Game, GameLogic, Pocket, PocketData, Pos, Role, Situation }
 import strategygames.variant.Variant
-import strategygames.chess.variant.Crazyhouse
 import strategygames.draughts
 import com.typesafe.scalalogging.Logger
 import cats.syntax.option._
@@ -22,7 +21,11 @@ object Chess {
     Monitor.time(_.chessMoveTime) {
       try {
         lazy val fullCaptureFields =
-          req.uci.flatMap(m => Uci.Move.apply(req.variant.gameLogic, m)).flatMap(_.capture)
+          req.uci.flatMap(m => Uci.Move.apply(
+            req.variant.gameLogic,
+            req.variant.gameFamily,
+            m
+          )).flatMap(_.capture)
         Game(req.variant.gameLogic, req.variant.some, Some(req.fen))(
           orig = req.orig,
           dest = req.dest,
@@ -65,8 +68,6 @@ object Chess {
               req.path,
               req.chapterId,
               dests = req.variant match {
-                case Variant.Chess(_) =>
-                  if (movable) game.situation.destinations else Map.empty
                 case Variant.Draughts(variant) => {
                   val truncatedDests = truncatedMoves.map { _ mapValues { _ flatMap (
                     uci => variant.boardSize.pos.posAt(uci.takeRight(2))
@@ -76,11 +77,12 @@ object Chess {
                       .to(Map).map{case(p, m) => (Pos.Draughts(p), m.map(Pos.Draughts))}
                   if (movable) draughtsDests else Map.empty
                 }
+                case _ => if (movable) game.situation.destinations else Map.empty
               },
               destsUci = req.variant.gameLogic match {
-                case GameLogic.Chess()    => None
                 case GameLogic.Draughts() =>
                   if (movable) truncatedMoves.map(_.values.toList.flatten) else None
+                case _ => None
               },
               captureLength = if (movable) captLen else None
             )
@@ -96,23 +98,22 @@ object Chess {
   def apply(req: ClientOut.AnaDrop): ClientIn =
     Monitor.time(_.chessMoveTime) {
       try {
-        (Game(req.variant.gameLogic, req.variant.some, Some(req.fen)), req.role, req.pos) match {
-          case (Game.Chess(game), Role.ChessRole(role), Pos.Chess(pos))
-            => game.drop(role, pos).toOption flatMap {
-              case (game, drop) =>
-                Game.Chess(game).pgnMoves.lastOption map { san =>
-                  makeNode(
-                    Game.Chess(game),
-                    Uci.WithSan(req.variant.gameLogic, Uci(req.variant.gameLogic, drop), san),
-                    req.path,
-                    req.chapterId,
-                    if (game.situation playable false) Game.Chess(game).situation.destinations
-                      else Map.empty
-                  )
-                }
-            } getOrElse ClientIn.StepFailure
-          case _ => sys.error("Drop not implemented for libs other than chess")
-        }
+        Game(
+          req.variant.gameLogic,
+          req.variant.some,
+          Some(req.fen)
+        ).drop(req.role, req.pos).toOption flatMap {
+          case (game, drop) =>
+            game.pgnMoves.lastOption map { san =>
+              makeNode(
+                game,
+                Uci.WithSan(req.variant.gameLogic, Uci(req.variant.gameLogic, drop), san),
+                req.path,
+                req.chapterId,
+                if (game.situation playable false) game.situation.destinations else Map.empty
+              )
+            }
+        } getOrElse ClientIn.StepFailure
       } catch {
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.pos}", e)
@@ -123,7 +124,7 @@ object Chess {
   def apply(req: ClientOut.AnaDests): ClientIn.Dests =
     Monitor.time(_.chessDestTime) {
       val sit = Game(req.variant.gameLogic, req.variant.some, Some(req.fen)).situation
-      val isInitial = (req.variant.standard || req.variant.draughtsStandard) &&
+      val isInitial = (req.variant.standardVariant) &&
         req.fen == Forsyth.initial(req.variant.gameLogic) &&
         req.path.value.isEmpty
       ClientIn.Dests(
@@ -226,7 +227,7 @@ object Chess {
           FullOpeningDB.findByFen(game.board.variant.gameLogic, fen)
         else None,
       drops = if (movable) game.situation.drops else Some(Nil),
-      crazyData = game.situation.board.crazyData,
+      pocketData = game.situation.board.pocketData,
       chapterId = chapterId
     )
   }
@@ -332,14 +333,21 @@ object Chess {
       sb.toString
     }
 
-    implicit val crazyhousePocketWriter: OWrites[Crazyhouse.Pocket] = OWrites { v =>
+    implicit val pocketWriter: OWrites[Pocket] = OWrites { v =>
       JsObject(
-        Crazyhouse.storableRoles.flatMap { role =>
+        Role.storable(v.roles.headOption match {
+          case Some(r) => r match {
+            case Role.ChessRole(_)   => GameLogic.Chess()
+            case Role.FairySFRole(_) => GameLogic.FairySF()
+            case _ => sys.error("Pocket not implemented for GameLogic")
+          }
+          case None => GameLogic.Chess()
+        }).flatMap { role =>
           Some(v.roles.count(role == _)).filter(0 < _).map { count => role.groundName -> JsNumber(count) }
         }
       )
     }
-    implicit val crazyhouseDataWriter: OWrites[Crazyhouse.Data] = OWrites { v =>
+    implicit val pocketDataWriter: OWrites[PocketData] = OWrites { v =>
       Json.obj("pockets" -> List(v.pockets.white, v.pockets.black))
     }
   }
