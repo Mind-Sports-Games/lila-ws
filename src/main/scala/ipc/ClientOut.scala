@@ -237,7 +237,7 @@ object ClientOut {
                 d    <- o obj "d"
                 lib  =  dataGameLogic(d)
                 variant = dataVariant(d, lib)
-                move <- d str "u" flatMap (m => Uci.Move.apply(lib, variant.gameFamily, m.pp("uci"))) orElse parseOldMove(d, lib, variant)
+                move <- d str "u" flatMap (m => Uci.Move.apply(lib, variant.gameFamily, m)) orElse parseOldMove(d, lib, variant)
                 blur  = d int "b" contains 1
                 ackId = d int "a"
               } yield RoundMove(variant.gameFamily, move, blur, parseMetrics(d), ackId)
