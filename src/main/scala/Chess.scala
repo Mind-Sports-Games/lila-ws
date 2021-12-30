@@ -348,7 +348,7 @@ object Chess {
       )
     }
     implicit val pocketDataWriter: OWrites[PocketData] = OWrites { v =>
-      Json.obj("pockets" -> List(v.pockets.white, v.pockets.black))
+      Json.obj("pockets" -> List(v.pockets.p1, v.pockets.p2))
     }
   }
 }

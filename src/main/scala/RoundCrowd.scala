@@ -1,6 +1,6 @@
 package lila.ws
 
-import strategygames.Color
+import strategygames.{ Player => SGPlayer }
 import java.util.concurrent.ConcurrentHashMap
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
@@ -17,13 +17,13 @@ final class RoundCrowd(
 
   private val rounds = new ConcurrentHashMap[RoomId, RoundState](32768)
 
-  def connect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit =
+  def connect(roomId: RoomId, user: Option[User], player: Option[SGPlayer]): Unit =
     publish(
       roomId,
       rounds.compute(roomId, (_, cur) => Option(cur).getOrElse(RoundState()).connect(user, player))
     )
 
-  def disconnect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit = {
+  def disconnect(roomId: RoomId, user: Option[User], player: Option[SGPlayer]): Unit = {
     rounds.computeIfPresent(
       roomId,
       (_, round) => {
@@ -34,11 +34,11 @@ final class RoundCrowd(
     )
   }
 
-  def botOnline(roomId: RoomId, color: Color, online: Boolean): Unit =
+  def botOnline(roomId: RoomId, sgPlayer: SGPlayer, online: Boolean): Unit =
     rounds.compute(
       roomId,
       (_, cur) => {
-        Option(cur).getOrElse(RoundState()).botOnline(color, online) match {
+        Option(cur).getOrElse(RoundState()).botOnline(sgPlayer, online) match {
           case None => cur
           case Some(round) =>
             publish(roomId, round)
@@ -75,8 +75,8 @@ final class RoundCrowd(
 
 object RoundCrowd {
 
-  case class Output(room: RoomCrowd.Output, players: Color.Map[Int]) {
-    def isEmpty = room.members == 0 && players.white == 0 && players.black == 0
+  case class Output(room: RoomCrowd.Output, players: SGPlayer.Map[Int]) {
+    def isEmpty = room.members == 0 && players.p1 == 0 && players.p2 == 0
   }
 
   def outputOf(roomId: RoomId, round: RoundState) =
@@ -87,21 +87,21 @@ object RoundCrowd {
 
   case class RoundState(
       room: RoomCrowd.RoomState = RoomCrowd.RoomState(),
-      players: Color.Map[Int] = Color.Map(0, 0)
+      players: SGPlayer.Map[Int] = SGPlayer.Map(0, 0)
   ) {
-    def connect(user: Option[User], player: Option[Color]) =
+    def connect(user: Option[User], player: Option[SGPlayer]) =
       copy(
         room = if (player.isDefined) room else room connect user,
         players = player.fold(players)(c => players.update(c, _ + 1))
       )
-    def disconnect(user: Option[User], player: Option[Color]) =
+    def disconnect(user: Option[User], player: Option[SGPlayer]) =
       copy(
         room = if (player.isDefined) room else room disconnect user,
         players = player.fold(players)(c => players.update(c, nb => Math.max(0, nb - 1)))
       )
-    def botOnline(color: Color, online: Boolean): Option[RoundState] = Some {
-      if (online) connect(None, Some(color))
-      else disconnect(None, Some(color))
+    def botOnline(sgPlayer: SGPlayer, online: Boolean): Option[RoundState] = Some {
+      if (online) connect(None, Some(sgPlayer))
+      else disconnect(None, Some(sgPlayer))
     }
 
     def isEmpty = room.isEmpty && players.forall(1 > _)

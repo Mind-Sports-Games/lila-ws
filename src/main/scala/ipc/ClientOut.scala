@@ -3,7 +3,7 @@ package ipc
 
 import strategygames.format.{ FEN, Uci }
 import strategygames.variant.Variant
-import strategygames.{ Centis, Color, GameFamily, GameLogic, MoveMetrics, Pos, PromotableRole, Role }
+import strategygames.{ Centis, Player => SGPlayer, GameFamily, GameLogic, MoveMetrics, Pos, PromotableRole, Role }
 import lila.ws.util.LilaJsObject.augment
 import play.api.libs.json._
 import scala.util.{ Success, Try }
@@ -97,7 +97,7 @@ object ClientOut {
   case class RoundHold(mean: Int, sd: Int)    extends ClientOutRound
   case class RoundBerserk(ackId: Option[Int]) extends ClientOutRound
   case class RoundSelfReport(name: String)    extends ClientOutRound
-  case class RoundFlag(color: Color)          extends ClientOutRound
+  case class RoundFlag(sgPlayer: SGPlayer)          extends ClientOutRound
   case object RoundBye                        extends ClientOutRound
 
   // chat
@@ -262,7 +262,7 @@ object ClientOut {
               } yield RoundHold(mean, sd)
             case "berserk"      => Some(RoundBerserk(o obj "d" flatMap (_ int "a")))
             case "rep"          => o obj "d" flatMap (_ str "n") map RoundSelfReport.apply
-            case "flag"         => o str "d" flatMap Color.fromName map RoundFlag.apply
+            case "flag"         => o str "d" flatMap SGPlayer.fromName map RoundFlag.apply
             case "bye2"         => Some(RoundBye)
             case "palantirPing" => Some(PalantirPing)
             case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "draw-yes" |
