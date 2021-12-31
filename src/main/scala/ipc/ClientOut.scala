@@ -3,7 +3,7 @@ package ipc
 
 import strategygames.format.{ FEN, Uci }
 import strategygames.variant.Variant
-import strategygames.{ Centis, Color, GameLogic, MoveMetrics, Pos, PromotableRole, Role }
+import strategygames.{ Centis, Color, GameFamily, GameLogic, MoveMetrics, Pos, PromotableRole, Role }
 import lila.ws.util.LilaJsObject.augment
 import play.api.libs.json._
 import scala.util.{ Success, Try }
@@ -88,7 +88,7 @@ object ClientOut {
 
   case class RoundPlayerForward(payload: JsValue) extends ClientOutRound
   case class RoundMove(
-    lib: GameLogic,
+    gf: GameFamily,
     uci: Uci,
     blur: Boolean,
     lag: MoveMetrics,
@@ -143,20 +143,26 @@ object ClientOut {
                 d    <- o obj "d"
                 path <- d str "path"
                 fen  <- d str "fen"
-                lib     = dataGameLib(d)
+                lib     = dataGameLogic(d)
                 variant = dataVariant(d, lib)
               } yield Opening(variant, Path(path), FEN(lib, fen))
             case "anaMove" =>
               for {
                 d    <- o obj "d"
-                lib  =  dataGameLib(d)
+                lib  =  dataGameLogic(d)
                 orig <- d str "orig" flatMap (p => Pos.fromKey(lib, p))
                 dest <- d str "dest" flatMap (p => Pos.fromKey(lib, p))
                 path <- d str "path"
                 fen  <- d str "fen"
                 variant   = dataVariant(d, lib)
                 chapterId = d str "ch" map ChapterId.apply
-                promotion = d str "promotion" flatMap (r => Role.promotable(lib, Role.allByGroundName(lib).get(r).map(_.name)))
+                promotion = d str "promotion" flatMap (
+                  r => Role.promotable(
+                    lib,
+                    variant.gameFamily,
+                    Role.allByGroundName(lib, variant.gameFamily
+                  ).get(r).map(_.name))
+                )
                 uci         = d str "uci"
                 fullCapture = d boolean "fullCapture"
               } yield AnaMove(
@@ -174,12 +180,12 @@ object ClientOut {
             case "anaDrop" =>
               for {
                 d    <- o obj "d"
-                lib  =  GameLogic.Chess()
-                role <- d str "role" flatMap Role.allByGroundName(lib).get
+                lib  =  dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                role <- d str "role" flatMap Role.allByGroundName(lib, variant.gameFamily).get
                 pos  <- d str "pos" flatMap (p => Pos.fromKey(lib, p))
                 path <- d str "path"
                 fen  <- d str "fen"
-                variant   = dataVariant(d, lib)
                 chapterId = d str "ch" map ChapterId.apply
               } yield AnaDrop(
                 role,
@@ -195,7 +201,7 @@ object ClientOut {
                 d    <- o obj "d"
                 path <- d str "path"
                 fen  <- d str "fen"
-                lib       = dataGameLib(d)
+                lib       = dataGameLogic(d)
                 variant   = dataVariant(d, lib)
                 chapterId = d str "ch" map ChapterId.apply
                 uci         = d str "uci"
@@ -229,21 +235,25 @@ object ClientOut {
             case "move" =>
               for {
                 d    <- o obj "d"
-                lib  =  dataGameLib(d)
-                move <- d str "u" flatMap (m => Uci.Move.apply(lib, m)) orElse parseOldMove(d, lib)
+                lib  =  dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                move <- d str "u" flatMap (m => Uci.Move.apply(lib, variant.gameFamily, m)) orElse parseOldMove(d, lib, variant)
                 blur  = d int "b" contains 1
                 ackId = d int "a"
-              } yield RoundMove(lib, move, blur, parseMetrics(d), ackId)
+              } yield RoundMove(variant.gameFamily, move, blur, parseMetrics(d), ackId)
             case "drop" =>
               for {
                 d    <- o obj "d"
-                lib  =  dataGameLib(d)
-                role <- d str "role" flatMap {g => Role.allByGroundName(lib).get(g)}
+                lib     =  dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                role <- d str "role" flatMap {
+                  g => Role.allByGroundName(lib, variant.gameFamily).get(g)
+                }
                 pos  <- d str "pos"
-                drop <- Uci.Drop.fromStrings(lib, role.name, pos)
+                drop <- Uci.Drop.fromStrings(lib, variant.gameFamily, role.name, pos)
                 blur  = d int "b" contains 1
                 ackId = d int "a"
-              } yield RoundMove(GameLogic.Chess(), drop, blur, parseMetrics(d), ackId)
+              } yield RoundMove(variant.gameFamily, drop, blur, parseMetrics(d), ackId)
             case "hold" =>
               for {
                 d    <- o obj "d"
@@ -288,18 +298,18 @@ object ClientOut {
 
   private val emptyPing: Try[ClientOut] = Success(Ping(None))
 
-  private def dataGameLib(d: JsObject): GameLogic =
+  private def dataGameLogic(d: JsObject): GameLogic =
     GameLogic(d int "lib" getOrElse 0)
 
   private def dataVariant(d: JsObject, lib: GameLogic): Variant =
     Variant.orDefault(lib, d str "variant" getOrElse "")
 
-  private def parseOldMove(d: JsObject, lib: GameLogic) =
+  private def parseOldMove(d: JsObject, lib: GameLogic, variant: Variant) =
     for {
       orig <- d str "from"
       dest <- d str "to"
       prom = d str "promotion"
-      move <- Uci.Move.fromStrings(lib, orig, dest, prom)
+      move <- Uci.Move.fromStrings(lib, variant.gameFamily, orig, dest, prom)
     } yield move
 
   private def parseMetrics(d: JsObject) =

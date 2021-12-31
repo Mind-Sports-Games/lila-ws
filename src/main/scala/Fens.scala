@@ -1,7 +1,7 @@
 package lila.ws
 
 import akka.actor.typed.ActorRef
-import strategygames.{ Color, GameLogic }
+import strategygames.{ Color, GameFamily }
 import strategygames.format.{ FEN, Uci }
 import java.util.concurrent.ConcurrentHashMap
 import lila.ws.ipc._
@@ -60,14 +60,19 @@ object Fens {
       (_, watched) => {
         val turnColor = moveBy.fold(Color.white)(c => !c)
         (json.value match {
-          case MoveClockRegex(uciS, fenS, lib, wcS, bcS) =>
+          case MoveClockRegex(uciS, fenS, gf, wcS, bcS) => {
+            val gfam = GameFamily(gf.toInt)
             for {
-              uci <- Uci(GameLogic(lib.toInt), uciS)
+              uci <- Uci(gfam.gameLogic, gfam, uciS)
               wc  <- wcS.toIntOption
               bc  <- bcS.toIntOption
-            } yield Position(uci, FEN(GameLogic(lib.toInt), fenS), Some(Clock(wc, bc)), turnColor)
-          case MoveRegex(uciS, fenS, lib) => Uci(GameLogic(lib.toInt), uciS) map {
-            Position(_, FEN(GameLogic(lib.toInt), fenS), None, turnColor)
+            } yield Position(uci, FEN(gfam.gameLogic, fenS), Some(Clock(wc, bc)), turnColor)
+          }
+          case MoveRegex(uciS, fenS, gf) => {
+            val gfam = GameFamily(gf.toInt)
+            Uci(gfam.gameLogic, gfam, uciS) map {
+              Position(_, FEN(gfam.gameLogic, fenS), None, turnColor)
+            }
           }
           case _                     => None
         }).fold(watched) { position =>
@@ -78,9 +83,9 @@ object Fens {
       }
     )
 
-  // ...,"uci":"h2g2","san":"Rg2","fen":"r2qb1k1/p2nbrpn/6Np/3pPp1P/1ppP1P2/2P1B3/PP2B1R1/R2Q1NK1",...,"lib":0,...,"clock":{"white":121.88,"black":120.94}
-  private val MoveRegex      = """uci":"([^"]+)".+fen":"([^"]+).+lib":(\d+)""".r.unanchored
-  private val MoveClockRegex = """uci":"([^"]+)".+fen":"([^"]+).+lib":(\d+).+white":(\d+).+black":(\d+)""".r.unanchored
+  // ...,"uci":"h2g2","san":"Rg2","fen":"r2qb1k1/p2nbrpn/6Np/3pPp1P/1ppP1P2/2P1B3/PP2B1R1/R2Q1NK1",...,"gf":0,...,"clock":{"white":121.88,"black":120.94}
+  private val MoveRegex      = """uci":"([^"]+)".+fen":"([^"]+).+gf":(\d+)""".r.unanchored
+  private val MoveClockRegex = """uci":"([^"]+)".+fen":"([^"]+).+gf":(\d+).+white":(\d+).+black":(\d+)""".r.unanchored
 
   def size = games.size
 }

@@ -1,10 +1,9 @@
 package lila.ws
 package ipc
 
-import strategygames.{ Color, Pos }
+import strategygames.{ Color, PocketData, Pos }
 import strategygames.format.{ FEN, Uci, UciCharPair }
 import strategygames.opening.FullOpening
-import strategygames.chess.variant.Crazyhouse
 import lila.ws.Position
 import lila.ws.util.LilaJsObject.augment
 import play.api.libs.json._
@@ -147,7 +146,7 @@ object ClientIn {
       captureLength: Option[Int],
       opening: Option[FullOpening],
       drops: Option[List[Pos]],
-      crazyData: Option[Crazyhouse.Data],
+      pocketData: Option[PocketData],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
     def write =
@@ -173,7 +172,7 @@ object ClientIn {
               .add("drops" -> drops.map { drops =>
                 JsString(drops.map(_.key).mkString)
               })
-              .add("crazy" -> crazyData)
+              .add("crazy" -> pocketData)
           )
           .add("ch" -> chapterId)
       )
