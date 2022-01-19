@@ -2,7 +2,7 @@ package lila.ws
 package ipc
 
 import strategygames.format.Uci
-import strategygames.{ Centis, Player => SGPlayer, GameFamily, MoveMetrics }
+import strategygames.{ Centis, Player => PlayerIndex, GameFamily, MoveMetrics }
 import play.api.libs.json._
 
 sealed trait LilaIn {
@@ -142,16 +142,16 @@ object LilaIn {
     def write = s"r/report $fullId $ip ${optional(userId)} $name"
   }
 
-  case class RoundFlag(gameId: Game.Id, sgPlayer: SGPlayer, playerId: Option[Game.PlayerId]) extends Round {
-    def write = s"r/flag $gameId ${writeSGPlayer(sgPlayer)} ${optional(playerId.map(_.value))}"
+  case class RoundFlag(gameId: Game.Id, playerIndex: PlayerIndex, playerId: Option[Game.PlayerId]) extends Round {
+    def write = s"r/flag $gameId ${writePlayerIndex(playerIndex)} ${optional(playerId.map(_.value))}"
   }
 
   case class RoundBye(fullId: Game.FullId) extends Round {
     def write = s"r/bye $fullId"
   }
 
-  case class PlayerChatSay(roomId: RoomId, userIdOrSGPlayer: Either[User.ID, SGPlayer], msg: String) extends Round {
-    def author = userIdOrSGPlayer.fold(identity, writeSGPlayer)
+  case class PlayerChatSay(roomId: RoomId, userIdOrPlayerIndex: Either[User.ID, PlayerIndex], msg: String) extends Round {
+    def author = userIdOrPlayerIndex.fold(identity, writePlayerIndex)
     def write  = s"chat/say $roomId $author $msg"
   }
   case class WatcherChatSay(roomId: RoomId, userId: User.ID, msg: String) extends Round {
@@ -184,5 +184,5 @@ object LilaIn {
   private def commas(as: Iterable[Any]): String   = if (as.isEmpty) "-" else as mkString ","
   private def boolean(b: Boolean): String         = if (b) "+" else "-"
   private def optional(s: Option[String]): String = s getOrElse "-"
-  private def writeSGPlayer(c: SGPlayer): String        = c.fold("w", "b")
+  private def writePlayerIndex(c: PlayerIndex): String        = c.fold("w", "b")
 }

@@ -1,6 +1,6 @@
 package lila.ws
 
-import strategygames.{ Player => SGPlayer }
+import strategygames.{ Player => PlayerIndex }
 import strategygames.format.{ FEN, Uci }
 
 trait StringValue extends Any {
@@ -32,16 +32,16 @@ object Game {
 
   // must only contain invariant data (no status, turns, or termination)
   // because it's cached in Mongo.scala
-  case class Round(id: Id, players: SGPlayer.Map[Player], ext: Option[RoundExt]) {
+  case class Round(id: Id, players: PlayerIndex.Map[Player], ext: Option[RoundExt]) {
     def player(id: PlayerId, userId: Option[User.ID]): Option[RoundPlayer] =
-      SGPlayer.all.collectFirst {
+      PlayerIndex.all.collectFirst {
         case c if players(c).id == id && players(c).userId == userId => RoundPlayer(id, c, ext)
       }
   }
 
   case class RoundPlayer(
       id: PlayerId,
-      sgPlayer: SGPlayer,
+      playerIndex: PlayerIndex,
       ext: Option[RoundExt]
   ) {
     def tourId  = ext collect { case RoundExt.Tour(id) => id }
@@ -162,14 +162,14 @@ case class ThroughStudyDoor(user: User, through: Either[RoomId, RoomId])
 case class RoundEventFlags(
     watcher: Boolean,
     owner: Boolean,
-    player: Option[SGPlayer],
-    moveBy: Option[SGPlayer],
+    player: Option[PlayerIndex],
+    moveBy: Option[PlayerIndex],
     troll: Boolean
 )
 
 case class UserTv(value: User.ID) extends AnyVal with StringValue
 
 case class Clock(p1: Int, p2: Int)
-case class Position(lastUci: Uci, fen: FEN, clock: Option[Clock], turnSGPlayer: SGPlayer) {
-  def fenWithSGPlayer = s"$fen ${turnSGPlayer.letter}"
+case class Position(lastUci: Uci, fen: FEN, clock: Option[Clock], turnPlayerIndex: PlayerIndex) {
+  def fenWithPlayerIndex = s"$fen ${turnPlayerIndex.letter}"
 }

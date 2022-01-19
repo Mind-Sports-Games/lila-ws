@@ -41,7 +41,7 @@ object RoundClientActor {
       onStart(deps, ctx)
       req.user foreach { users.connect(_, ctx.self) }
       state.busChans foreach { Bus.subscribe(_, ctx.self) }
-      roundCrowd.connect(roomState.id, req.user, player.map(_.sgPlayer))
+      roundCrowd.connect(roomState.id, req.user, player.map(_.playerIndex))
       History.round.getFrom(Game.Id(roomState.id.value), fromVersion) match {
         case None         => clientIn(ClientIn.Resync)
         case Some(events) => events map { versionFor(state, _) } foreach clientIn
@@ -54,9 +54,9 @@ object RoundClientActor {
       (msg.flags.troll && !state.room.isTroll.value) ||
       (msg.flags.owner && state.player.isEmpty) ||
       (msg.flags.watcher && state.player.isDefined) ||
-      msg.flags.player.exists(c => state.player.fold(true)(_.sgPlayer != c))
+      msg.flags.player.exists(c => state.player.fold(true)(_.playerIndex != c))
     ) msg.skip
-    else if (msg.flags.moveBy.exists(c => state.player.fold(true)(_.sgPlayer == c))) msg.noDests
+    else if (msg.flags.moveBy.exists(c => state.player.fold(true)(_.playerIndex == c))) msg.noDests
     else msg.full
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
@@ -125,8 +125,8 @@ object RoundClientActor {
             }
             Behaviors.same
 
-          case ClientOut.RoundFlag(sgPlayer) =>
-            lilaIn.round(LilaIn.RoundFlag(gameId, sgPlayer, state.player.map(_.id)))
+          case ClientOut.RoundFlag(playerIndex) =>
+            lilaIn.round(LilaIn.RoundFlag(gameId, playerIndex, state.player.map(_.id)))
             Behaviors.same
 
           case ClientOut.RoundBye =>
@@ -146,7 +146,7 @@ object RoundClientActor {
                 def extMsg(id: String) = req.userId.map { LilaIn.ChatSay(RoomId(id), _, msg) }
                 p.ext match {
                   case None =>
-                    lilaIn.round(LilaIn.PlayerChatSay(state.room.id, req.userId.toLeft(p.sgPlayer), msg))
+                    lilaIn.round(LilaIn.PlayerChatSay(state.room.id, req.userId.toLeft(p.playerIndex), msg))
                   case Some(Tour(id))  => extMsg(id) foreach lilaIn.tour
                   case Some(Swiss(id)) => extMsg(id) foreach lilaIn.swiss
                   case Some(Simul(id)) => extMsg(id) foreach lilaIn.simul
@@ -202,7 +202,7 @@ object RoundClientActor {
       .receiveSignal { case (ctx, PostStop) =>
         onStop(state.site, deps, ctx)
         state.busChans foreach { Bus.unsubscribe(_, ctx.self) }
-        deps.roundCrowd.disconnect(state.room.id, deps.req.user, state.player.map(_.sgPlayer))
+        deps.roundCrowd.disconnect(state.room.id, deps.req.user, state.player.map(_.playerIndex))
         Behaviors.same
       }
 }

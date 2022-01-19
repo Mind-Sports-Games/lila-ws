@@ -1,7 +1,7 @@
 package lila.ws
 package ipc
 
-import strategygames.{ P2, Player => SGPlayer, P1, Speed }
+import strategygames.{ P2, Player => PlayerIndex, P1, Speed }
 
 sealed trait LilaOut
 
@@ -89,9 +89,9 @@ object LilaOut {
   case class RoundResyncPlayer(fullId: Game.FullId)                                   extends RoundOut
   case class RoundGone(fullId: Game.FullId, v: Boolean)                               extends RoundOut
   case class RoundGoneIn(fullId: Game.FullId, seconds: Int)                           extends RoundOut
-  case class RoundBotOnline(gameId: Game.Id, sgPlayer: SGPlayer, v: Boolean)                extends RoundOut
+  case class RoundBotOnline(gameId: Game.Id, playerIndex: PlayerIndex, v: Boolean)                extends RoundOut
   case class GameStart(users: List[User.ID])                                          extends RoundOut
-  case class GameFinish(gameId: Game.Id, winner: Option[SGPlayer], users: List[User.ID]) extends RoundOut
+  case class GameFinish(gameId: Game.Id, winner: Option[PlayerIndex], users: List[User.ID]) extends RoundOut
   case class TvSelect(gameId: Game.Id, speed: Speed, json: JsonString)          extends RoundOut
 
   // racer
@@ -282,14 +282,14 @@ object LilaOut {
         }
 
       case "r/bot/online" =>
-        get(args, 3) { case Array(gameId, sgPlayer, v) =>
-          Some(RoundBotOnline(Game.Id(gameId), readSGPlayer(sgPlayer), boolean(v)))
+        get(args, 3) { case Array(gameId, playerIndex, v) =>
+          Some(RoundBotOnline(Game.Id(gameId), readPlayerIndex(playerIndex), boolean(v)))
         }
 
       case "r/start" => Some(GameStart(commas(args).toList))
       case "r/finish" =>
         get(args, 3) { case Array(gameId, winner, users) =>
-          Some(GameFinish(Game.Id(gameId), readOptionalSGPlayer(winner), commas(users).toList))
+          Some(GameFinish(Game.Id(gameId), readOptionalPlayerIndex(winner), commas(users).toList))
         }
 
       // tv
@@ -330,6 +330,6 @@ object LilaOut {
   def commas(str: String): Array[String]            = if (str == "-") Array.empty else str split ','
   def boolean(str: String): Boolean                 = str == "+"
   def optional(str: String): Option[String]         = if (str == "-") None else Some(str)
-  def readSGPlayer(str: String): SGPlayer                 = SGPlayer.fromP1(str == "w")
-  def readOptionalSGPlayer(str: String): Option[SGPlayer] = optional(str) map readSGPlayer
+  def readPlayerIndex(str: String): PlayerIndex                 = PlayerIndex.fromP1(str == "w")
+  def readOptionalPlayerIndex(str: String): Option[PlayerIndex] = optional(str) map readPlayerIndex
 }

@@ -1,7 +1,7 @@
 package lila.ws
 
 import akka.actor.typed.ActorRef
-import strategygames.{ Player => SGPlayer, GameFamily }
+import strategygames.{ Player => PlayerIndex, GameFamily }
 import strategygames.format.{ FEN, Uci }
 import java.util.concurrent.ConcurrentHashMap
 import lila.ws.ipc._
@@ -44,7 +44,7 @@ object Fens {
     }
 
   // a game finishes
-  def finish(gameId: Game.Id, winner: Option[SGPlayer]) =
+  def finish(gameId: Game.Id, winner: Option[PlayerIndex]) =
     games.computeIfPresent(
       gameId,
       (_, watched) => {
@@ -54,11 +54,11 @@ object Fens {
     )
 
   // move coming from the server
-  def move(gameId: Game.Id, json: JsonString, moveBy: Option[SGPlayer]): Unit =
+  def move(gameId: Game.Id, json: JsonString, moveBy: Option[PlayerIndex]): Unit =
     games.computeIfPresent(
       gameId,
       (_, watched) => {
-        val turnSGPlayer = moveBy.fold(SGPlayer.p1)(c => !c)
+        val turnPlayerIndex = moveBy.fold(PlayerIndex.p1)(c => !c)
         (json.value match {
           case MoveClockRegex(uciS, fenS, gf, wcS, bcS) => {
             val gfam = GameFamily(gf.toInt)
@@ -66,12 +66,12 @@ object Fens {
               uci <- Uci(gfam.gameLogic, gfam, uciS)
               wc  <- wcS.toIntOption
               bc  <- bcS.toIntOption
-            } yield Position(uci, FEN(gfam.gameLogic, fenS), Some(Clock(wc, bc)), turnSGPlayer)
+            } yield Position(uci, FEN(gfam.gameLogic, fenS), Some(Clock(wc, bc)), turnPlayerIndex)
           }
           case MoveRegex(uciS, fenS, gf) => {
             val gfam = GameFamily(gf.toInt)
             Uci(gfam.gameLogic, gfam, uciS) map {
-              Position(_, FEN(gfam.gameLogic, fenS), None, turnSGPlayer)
+              Position(_, FEN(gfam.gameLogic, fenS), None, turnPlayerIndex)
             }
           }
           case _                     => None
