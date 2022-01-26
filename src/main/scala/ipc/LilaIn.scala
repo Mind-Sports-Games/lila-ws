@@ -2,7 +2,7 @@ package lila.ws
 package ipc
 
 import strategygames.format.Uci
-import strategygames.{ Centis, Color, GameFamily, MoveMetrics }
+import strategygames.{ Centis, Player => PlayerIndex, GameFamily, MoveMetrics }
 import play.api.libs.json._
 
 sealed trait LilaIn {
@@ -142,16 +142,16 @@ object LilaIn {
     def write = s"r/report $fullId $ip ${optional(userId)} $name"
   }
 
-  case class RoundFlag(gameId: Game.Id, color: Color, playerId: Option[Game.PlayerId]) extends Round {
-    def write = s"r/flag $gameId ${writeColor(color)} ${optional(playerId.map(_.value))}"
+  case class RoundFlag(gameId: Game.Id, playerIndex: PlayerIndex, playerId: Option[Game.PlayerId]) extends Round {
+    def write = s"r/flag $gameId ${writePlayerIndex(playerIndex)} ${optional(playerId.map(_.value))}"
   }
 
   case class RoundBye(fullId: Game.FullId) extends Round {
     def write = s"r/bye $fullId"
   }
 
-  case class PlayerChatSay(roomId: RoomId, userIdOrColor: Either[User.ID, Color], msg: String) extends Round {
-    def author = userIdOrColor.fold(identity, writeColor)
+  case class PlayerChatSay(roomId: RoomId, userIdOrPlayerIndex: Either[User.ID, PlayerIndex], msg: String) extends Round {
+    def author = userIdOrPlayerIndex.fold(identity, writePlayerIndex)
     def write  = s"chat/say $roomId $author $msg"
   }
   case class WatcherChatSay(roomId: RoomId, userId: User.ID, msg: String) extends Round {
@@ -161,7 +161,7 @@ object LilaIn {
   case class RoundOnlines(many: Iterable[RoundCrowd.Output]) extends Round {
     private def one(r: RoundCrowd.Output) =
       if (r.isEmpty) r.room.roomId.value
-      else s"${r.room.roomId}${boolean(r.players.white > 0)}${boolean(r.players.black > 0)}"
+      else s"${r.room.roomId}${boolean(r.players.p1 > 0)}${boolean(r.players.p2 > 0)}"
     def write = s"r/ons ${commas(many map one)}"
   }
 
@@ -184,5 +184,5 @@ object LilaIn {
   private def commas(as: Iterable[Any]): String   = if (as.isEmpty) "-" else as mkString ","
   private def boolean(b: Boolean): String         = if (b) "+" else "-"
   private def optional(s: Option[String]): String = s getOrElse "-"
-  private def writeColor(c: Color): String        = c.fold("w", "b")
+  private def writePlayerIndex(c: PlayerIndex): String        = c.fold("w", "b")
 }

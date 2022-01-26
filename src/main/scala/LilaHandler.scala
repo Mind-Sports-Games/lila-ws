@@ -143,7 +143,7 @@ final class LilaHandler(
       case RoomStop(roomId) =>
         History.round.stop(roomId)
         publish(_ room roomId, ClientCtrl.Disconnect)
-      case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
+      case RoundBotOnline(gameId, playerIndex, v) => roundCrowd.botOnline(gameId, playerIndex, v)
       case GameStart(users) =>
         users.foreach { u =>
           friendList.startPlaying(u)
