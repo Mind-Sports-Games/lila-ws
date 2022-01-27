@@ -1,7 +1,7 @@
 package lila.ws
 package ipc
 
-import strategygames.{ Color, PocketData, Pos }
+import strategygames.{ Player => PlayerIndex, PocketData, Pos }
 import strategygames.format.{ FEN, Uci, UciCharPair }
 import strategygames.opening.FullOpening
 import lila.ws.Position
@@ -45,14 +45,14 @@ object ClientIn {
           .obj(
             "id"  -> gameId.value,
             "lm"  -> position.lastUci,
-            "fen" -> position.fenWithColor
+            "fen" -> position.fenWithPlayerIndex
           )
-          .add("wc" -> position.clock.map(_.white))
-          .add("bc" -> position.clock.map(_.black))
+          .add("wc" -> position.clock.map(_.p1))
+          .add("bc" -> position.clock.map(_.p2))
       )
   }
 
-  case class Finish(gameId: Game.Id, winner: Option[Color]) extends ClientIn {
+  case class Finish(gameId: Game.Id, winner: Option[PlayerIndex]) extends ClientIn {
     def write = cliMsg("finish", Json.obj("id" -> gameId.value, "win" -> winner.map(_.letter.toString)))
   }
 

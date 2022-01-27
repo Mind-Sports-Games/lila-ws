@@ -1,6 +1,6 @@
 package lila.ws
 
-import strategygames.{ Color, Status }
+import strategygames.{ Player => PlayerIndex, Status }
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import com.typesafe.config.Config
 import org.joda.time.DateTime
@@ -97,7 +97,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
               doc       <- docOpt
               playerIds <- doc.getAsOpt[String]("is")
               users = doc.getAsOpt[List[User.ID]]("us") getOrElse Nil
-              players = Color.Map(
+              players = PlayerIndex.Map(
                 Game.Player(Game.PlayerId(playerIds take 4), users.headOption.filter(_.nonEmpty)),
                 Game.Player(Game.PlayerId(playerIds drop 4), users lift 1)
               )
