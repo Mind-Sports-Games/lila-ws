@@ -14,7 +14,7 @@ object LilaIn {
 
   sealed trait Site extends LilaIn
 
-  sealed trait Lobby extends LilaIn
+  //sealed trait Lobby extends LilaIn
 
   sealed trait Room      extends LilaIn
   sealed trait Simul     extends Room
@@ -25,6 +25,8 @@ object LilaIn {
   sealed trait Round     extends Room
   sealed trait Challenge extends Room
   sealed trait Racer     extends Room
+  sealed trait Lobby     extends Room
+  
 
   sealed trait AnyRoom
       extends Simul
@@ -35,6 +37,7 @@ object LilaIn {
       with Round
       with Challenge
       with Racer
+      with Lobby
 
   case class TellSri(sri: Sri, userId: Option[User.ID], payload: JsValue) extends Site with Lobby {
     def write = s"tell/sri $sri ${optional(userId)} ${Json.stringify(payload)}"
@@ -87,7 +90,8 @@ object LilaIn {
     def write = s"room/alives ${commas(roomIds)}"
   }
   case class ChatSay(roomId: RoomId, userId: User.ID, msg: String) extends AnyRoom {
-    def write = s"chat/say $roomId $userId $msg"
+    val x = (roomId.pp("Lila in chatsay - roomid"), msg.pp("Lila in chatsay - msg"));
+    def write = s"chat/say $roomId $userId $msg".pp("chatsay write ")
   }
   case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String, text: String)
       extends AnyRoom {
@@ -152,10 +156,10 @@ object LilaIn {
 
   case class PlayerChatSay(roomId: RoomId, userIdOrPlayerIndex: Either[User.ID, PlayerIndex], msg: String) extends Round {
     def author = userIdOrPlayerIndex.fold(identity, writePlayerIndex)
-    def write  = s"chat/say $roomId $author $msg"
+    def write  = s"chat/say $roomId $author $msg".pp("player chat say")
   }
   case class WatcherChatSay(roomId: RoomId, userId: User.ID, msg: String) extends Round {
-    def write = s"chat/say/w $roomId $userId $msg"
+    def write = s"chat/say/w $roomId $userId $msg".pp("watacher chat say")
   }
 
   case class RoundOnlines(many: Iterable[RoundCrowd.Output]) extends Round {

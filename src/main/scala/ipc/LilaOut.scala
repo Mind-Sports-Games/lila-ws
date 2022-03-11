@@ -111,8 +111,8 @@ object LilaOut {
     f.applyOrElse(args.split(" ", nb), (_: Array[String]) => None)
 
   def read(str: String): Option[LilaOut] = {
-    val parts = str.split(" ", 2)
-    val args  = parts.lift(1) getOrElse ""
+    val parts = str.pp("read str").split(" ", 2).pp("parts")
+    val args  = (parts.lift(1) getOrElse "").pp("args in read")
     parts(0) match {
 
       case "mlat" => args.toDoubleOption map Mlat.apply
@@ -246,13 +246,13 @@ object LilaOut {
         }
 
       case "tell/room/chat" =>
-        get(args, 4) { case Array(roomId, version, troll, payload) =>
+        get(args.pp("args"), 4) { case Array(roomId, version, troll, payload) =>
           version.toIntOption map { sv =>
             TellRoomChat(
-              RoomId(roomId),
+              RoomId(roomId.pp("roomID")),
               SocketVersion(sv),
               IsTroll(boolean(troll)),
-              JsonString(payload)
+              JsonString(payload).pp("payload")
             )
           }
         }

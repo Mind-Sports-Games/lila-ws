@@ -35,9 +35,10 @@ final class Controller(
     WebSocket(req) { sri => user =>
       Future successful endpoint(
         name = "lobby",
-        behavior = LobbyClientActor start {
-          Deps(emit, Req(req, sri, user), services)
-        },
+        behavior = LobbyClientActor start (
+          Deps(emit, Req(req, sri, user), services),
+          RoomActor.State(RoomId("lobbyhome"), IsTroll(false))
+        ),
         credits = 30,
         interval = 30.seconds
       )
@@ -153,7 +154,7 @@ final class Controller(
 
   def team(id: Team.ID, req: RequestHeader, emit: ClientEmit) =
     WebSocket(req) { sri => user =>
-      mongo.teamExists(id) zip mongo.troll.is(user) map {
+      mongo.teamExists(id.pp("team id")) zip mongo.troll.is(user) map {
         case (true, isTroll) =>
           endpoint(
             name = "team",

@@ -269,7 +269,10 @@ object ClientOut {
                 "draw-no" | "draw-claim" | "resign" | "resign-force" | "draw-force" | "abort" | "outoftime" =>
               Some(RoundPlayerForward(o))
             // chat
-            case "talk" => o str "d" map { ChatSay.apply }
+            case "talk" => {
+                      Thread.dumpStack();
+                      o.pp("talk msg") str "d" map { ChatSay.apply }
+                      }
             case "timeout" =>
               for {
                 data   <- o obj "d"

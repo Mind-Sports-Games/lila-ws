@@ -33,13 +33,14 @@ final private class FrameHandler(implicit ec: ExecutionContext)
 
             case ClientOut.WrongHole =>
               Monitor.clientOutWrongHole.increment()
+              logger.info("Wrong hole")
 
             case out =>
-              Option(ctx.channel.attr(key.client).get) match {
+              Option(ctx.channel.attr(key.client).get).pp("out FH") match {
                 case Some(clientFu) =>
-                  clientFu.value match {
-                    case Some(client) => client foreach (_ ! out)
-                    case None         => clientFu foreach (_ ! out)
+                  clientFu.value.pp("clientfu") match {
+                    case Some(client) => client foreach (_ ! out.pp("out 1"))
+                    case None         => clientFu foreach (_ ! out.pp("out 2"))
                   }
                 case None => logger.warn(s"No client actor to receive $out")
               }
