@@ -35,10 +35,9 @@ final class Controller(
     WebSocket(req) { sri => user =>
       Future successful endpoint(
         name = "lobby",
-        behavior = LobbyClientActor start (
-          Deps(emit, Req(req, sri, user), services),
-          RoomActor.State(RoomId("lobbyhome"), IsTroll(false))
-        ),
+        behavior = LobbyClientActor.start(RoomActor.State(RoomId("lobbyhome"), IsTroll(false)), fromVersion(req)) {
+          Deps(emit, Req(req.pp("lobby req"), sri, user), services)  
+        },
         credits = 30,
         interval = 30.seconds
       )
@@ -159,7 +158,7 @@ final class Controller(
           endpoint(
             name = "team",
             behavior = TeamClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
-              Deps(emit, Req(req, sri, user), services)
+              Deps(emit, Req(req.pp("team req"), sri, user), services)
             },
             credits = 30,
             interval = 20.seconds

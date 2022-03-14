@@ -17,15 +17,17 @@ object LobbyClientActor {
       lastCrowd: ClientIn.Crowd = ClientIn.emptyCrowd,
   )
 
-  def start(deps: Deps, roomState: RoomActor.State): Behavior[ClientMsg] =
+  def start(roomState: RoomActor.State, fromVersion: Option[SocketVersion])(
+    deps: Deps
+  ): Behavior[ClientMsg] =
     Behaviors.setup { ctx =>
       import deps._
       onStart(deps, ctx)
       req.user foreach { users.connect(_, ctx.self, silently = true) }
       services.lobby.connect(req.sri -> req.user.map(_.id))
-      RoomActor.onStart(roomState, Some(SocketVersion(0)), deps, ctx)
       Bus.subscribe(Bus.channel.lobby, ctx.self)
       Bus.subscribe(Bus.channel.externalChat(RoomId("lobbyhome")), ctx.self)
+      RoomActor.onStart(roomState, fromVersion, deps, ctx)
       apply(State(roomState), deps)
     }
 
@@ -57,21 +59,9 @@ object LobbyClientActor {
             if (!state.idle) clientIn(payload)
             Behaviors.same
 
-          case ClientIn.OnlyFor(endpoint, payload) =>
-            if (endpoint == ClientIn.OnlyFor.Lobby) clientIn(payload)
-            Behaviors.same
-
-          case crowd: ClientIn.Crowd =>
-            if (crowd == state.lastCrowd) None -> None
-            else
-              Some {
-                deps.clientIn(crowd)
-                state.copy(lastCrowd = crowd)
-              } -> None
-            Behaviors.same
-
-          case SetTroll(v) =>
-            apply(state.copy(room = state.room.copy(isTroll = v)), deps)
+          // case ClientIn.OnlyFor(endpoint, payload) =>
+          //   if (endpoint == ClientIn.OnlyFor.Lobby) clientIn(payload)
+          //   Behaviors.same
 
           case in: ClientIn =>
             clientInReceive(state.site, deps, in) match {
@@ -85,14 +75,6 @@ object LobbyClientActor {
 
           case ClientOut.LobbyForward(payload) =>
             forward(payload)
-            Behaviors.same
-
-          case versioned: ClientIn.Versioned =>
-            deps.clientIn(versionFor(state.room.isTroll, versioned))
-            Behaviors.same
-
-          case ClientOut.ChatSay(msg) =>
-            deps.req.user.map { u => LilaIn.ChatSay(RoomId("lobbyhome").pp("roomid"), u.id.pp("userid"), msg.pp("msg 1")) }
             Behaviors.same
 
           case ClientOut.Idle(value, payload) =>
