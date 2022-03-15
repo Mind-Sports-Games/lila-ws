@@ -93,16 +93,16 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
       val msg    = in.write
       val path   = msg.takeWhile(' '.!=)
       val chanIn = chan in msg
-      if (status.isOnline.pp("1")) {
-        connIn.async.publish(chanIn.pp("1 chan"), msg.pp("1 msg")).pp("1a")
-        Monitor.redis.in(chanIn, path.pp("1 path"))
-      } else if (in.critical.pp("2")) {
-        buffer.enqueue(chanIn.pp("2a"), msg.pp("2b"))
+      if (status.isOnline) {
+        connIn.async.publish(chanIn, msg)
+        Monitor.redis.in(chanIn, path)
+      } else if (in.critical) {
+        buffer.enqueue(chanIn, msg)
         Monitor.redis.queue(chanIn, path)
-      } else if (in.isInstanceOf[LilaIn.RoomSetVersions].pp("3")) {
-        connIn.async.publish(chanIn.pp("3a"), msg.pp("3b"))
+      } else if (in.isInstanceOf[LilaIn.RoomSetVersions]) {
+        connIn.async.publish(chanIn, msg)
       } else {
-        Monitor.redis.drop(chanIn.pp("4a"), path.pp("4b"))
+        Monitor.redis.drop(chanIn, path)
       }
     }
 

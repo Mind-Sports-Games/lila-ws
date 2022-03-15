@@ -6,7 +6,7 @@ import strategygames.{ P2, Player => PlayerIndex, P1, Speed }
 sealed trait LilaOut
 
 sealed trait SiteOut  extends LilaOut
-// sealed trait LobbyOut extends LilaOut
+
 sealed trait RoomOut  extends LilaOut
 sealed trait SimulOut extends RoomOut
 sealed trait TourOut  extends RoomOut
@@ -113,8 +113,8 @@ object LilaOut {
     f.applyOrElse(args.split(" ", nb), (_: Array[String]) => None)
 
   def read(str: String): Option[LilaOut] = {
-    val parts = str.pp("read str").split(" ", 2).pp("parts")
-    val args  = (parts.lift(1) getOrElse "").pp("args in read")
+    val parts = str.split(" ", 2)
+    val args  = (parts.lift(1) getOrElse "")
     parts(0) match {
 
       case "mlat" => args.toDoubleOption map Mlat.apply
@@ -248,13 +248,13 @@ object LilaOut {
         }
 
       case "tell/room/chat" =>
-        get(args.pp("args"), 4) { case Array(roomId, version, troll, payload) =>
+        get(args, 4) { case Array(roomId, version, troll, payload) =>
           version.toIntOption map { sv =>
             TellRoomChat(
-              RoomId(roomId.pp("roomID")),
+              RoomId(roomId),
               SocketVersion(sv),
               IsTroll(boolean(troll)),
-              JsonString(payload).pp("payload")
+              JsonString(payload)
             )
           }
         }

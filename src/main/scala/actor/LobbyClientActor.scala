@@ -13,8 +13,7 @@ object LobbyClientActor {
   case class State(
       room: RoomActor.State,
       idle: Boolean = false,
-      site: ClientActor.State = ClientActor.State(),
-      lastCrowd: ClientIn.Crowd = ClientIn.emptyCrowd,
+      site: ClientActor.State = ClientActor.State()
   )
 
   def start(roomState: RoomActor.State, fromVersion: Option[SocketVersion])(
@@ -26,14 +25,9 @@ object LobbyClientActor {
       req.user foreach { users.connect(_, ctx.self, silently = true) }
       services.lobby.connect(req.sri -> req.user.map(_.id))
       Bus.subscribe(Bus.channel.lobby, ctx.self)
-      Bus.subscribe(Bus.channel.externalChat(RoomId("lobbyhome")), ctx.self)
       RoomActor.onStart(roomState, fromVersion, deps, ctx)
       apply(State(roomState), deps)
     }
-
-  def versionFor(isTroll: IsTroll, msg: ClientIn.Versioned): ClientIn.Payload =
-    if (!msg.troll.value || isTroll.value) msg.full
-    else msg.skip
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
     Behaviors
@@ -44,7 +38,6 @@ object LobbyClientActor {
           lilaIn.lobby(LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
 
         def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] = {
-        // msg.pp("lobbyClientActor msg") match {
 
           case ClientCtrl.Broom(oldSeconds) =>
             if (state.site.lastPing < oldSeconds) Behaviors.stopped
@@ -58,10 +51,6 @@ object LobbyClientActor {
           case ClientIn.LobbyNonIdle(payload) =>
             if (!state.idle) clientIn(payload)
             Behaviors.same
-
-          // case ClientIn.OnlyFor(endpoint, payload) =>
-          //   if (endpoint == ClientIn.OnlyFor.Lobby) clientIn(payload)
-          //   Behaviors.same
 
           case in: ClientIn =>
             clientInReceive(state.site, deps, in) match {

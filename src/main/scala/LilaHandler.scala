@@ -76,7 +76,7 @@ final class LilaHandler(
       pairings.foreach { case (sri, fullId) => publish(_ sri sri, ClientIn.LobbyPairing(fullId)) }
 
     case site: SiteOut => siteHandler(site)
-    case msg           => roomHandler(msg.pp("lobby msg LH"))
+    case msg           => roomHandler(msg)
   }
 
   private val simulHandler: Emit[LilaOut] = {
@@ -88,7 +88,7 @@ final class LilaHandler(
 
   private val teamHandler: Emit[LilaOut] = {
     case LilaBoot => roomBoot(_.idFilter.team, lila.emit.team)
-    case msg      => roomHandler(msg.pp("team msg LH"))
+    case msg      => roomHandler(msg)
   }
 
   private val swissHandler: Emit[LilaOut] = {
@@ -179,7 +179,7 @@ final class LilaHandler(
       case TellRoomVersion(roomId, version, troll, payload) =>
         tellVersion(roomId, version, troll, payload)
       case TellRoomChat(roomId, version, troll, payload) =>
-        tellVersion(roomId, version, troll, payload.pp("payload roomchat LH"))
+        tellVersion(roomId, version, troll, payload)
         publish(_ externalChat roomId, ClientIn.Payload(payload))
       case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
       case RoomStop(roomId)          => History.room.stop(roomId)

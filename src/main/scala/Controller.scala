@@ -33,14 +33,18 @@ final class Controller(
 
   def lobby(req: RequestHeader, emit: ClientEmit) =
     WebSocket(req) { sri => user =>
-      Future successful endpoint(
-        name = "lobby",
-        behavior = LobbyClientActor.start(RoomActor.State(RoomId("lobbyhome"), IsTroll(false)), fromVersion(req)) {
-          Deps(emit, Req(req.pp("lobby req"), sri, user), services)  
-        },
-        credits = 30,
-        interval = 30.seconds
-      )
+      mongo.troll.is(user) map {
+        case (isTroll) =>
+          endpoint(
+            name = "lobby",
+            behavior = LobbyClientActor.start(RoomActor.State(RoomId("lobbyhome"), isTroll), fromVersion(req)) {
+              Deps(emit, Req(req, sri, user), services)
+            },
+            credits = 30,
+            interval = 30.seconds
+          )
+        case _ => notFound
+      }
     }
 
   def simul(id: Simul.ID, req: RequestHeader, emit: ClientEmit) =
@@ -153,12 +157,12 @@ final class Controller(
 
   def team(id: Team.ID, req: RequestHeader, emit: ClientEmit) =
     WebSocket(req) { sri => user =>
-      mongo.teamExists(id.pp("team id")) zip mongo.troll.is(user) map {
+      mongo.teamExists(id) zip mongo.troll.is(user) map {
         case (true, isTroll) =>
           endpoint(
             name = "team",
             behavior = TeamClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
-              Deps(emit, Req(req.pp("team req"), sri, user), services)
+              Deps(emit, Req(req, sri, user), services)
             },
             credits = 30,
             interval = 20.seconds
