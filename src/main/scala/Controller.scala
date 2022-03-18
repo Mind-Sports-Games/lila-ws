@@ -33,14 +33,18 @@ final class Controller(
 
   def lobby(req: RequestHeader, emit: ClientEmit) =
     WebSocket(req) { sri => user =>
-      Future successful endpoint(
-        name = "lobby",
-        behavior = LobbyClientActor start {
-          Deps(emit, Req(req, sri, user), services)
-        },
-        credits = 30,
-        interval = 30.seconds
-      )
+      mongo.troll.is(user) map {
+        case (isTroll) =>
+          endpoint(
+            name = "lobby",
+            behavior = LobbyClientActor.start(RoomActor.State(RoomId("lobbyhome"), isTroll), fromVersion(req)) {
+              Deps(emit, Req(req, sri, user), services)
+            },
+            credits = 30,
+            interval = 30.seconds
+          )
+        case _ => notFound
+      }
     }
 
   def simul(id: Simul.ID, req: RequestHeader, emit: ClientEmit) =
