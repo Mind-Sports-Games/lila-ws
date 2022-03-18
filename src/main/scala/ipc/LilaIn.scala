@@ -88,7 +88,6 @@ object LilaIn {
     def write = s"room/alives ${commas(roomIds)}"
   }
   case class ChatSay(roomId: RoomId, userId: User.ID, msg: String) extends AnyRoom {
-    val x = (roomId, msg);
     def write = s"chat/say $roomId $userId $msg"
   }
   case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String, text: String)

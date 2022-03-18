@@ -21,7 +21,6 @@ object LobbyClientActor {
   ): Behavior[ClientMsg] =
     Behaviors.setup { ctx =>
       import deps._
-      onStart(deps, ctx)
       req.user foreach { users.connect(_, ctx.self, silently = true) }
       services.lobby.connect(req.sri -> req.user.map(_.id))
       Bus.subscribe(Bus.channel.lobby, ctx.self)
@@ -32,7 +31,7 @@ object LobbyClientActor {
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
     Behaviors
       .receive[ClientMsg] { (ctx, msg) => {
-        import deps._  
+        import deps._
 
         def forward(payload: JsValue): Unit =
           lilaIn.lobby(LilaIn.TellSri(req.sri, req.user.map(_.id), payload))

@@ -114,7 +114,7 @@ object LilaOut {
 
   def read(str: String): Option[LilaOut] = {
     val parts = str.split(" ", 2)
-    val args  = (parts.lift(1) getOrElse "")
+    val args  = parts.lift(1) getOrElse ""
     parts(0) match {
 
       case "mlat" => args.toDoubleOption map Mlat.apply
