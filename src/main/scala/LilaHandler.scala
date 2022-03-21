@@ -74,8 +74,6 @@ final class LilaHandler(
       }
     case LobbyPairings(pairings) =>
       pairings.foreach { case (sri, fullId) => publish(_ sri sri, ClientIn.LobbyPairing(fullId)) }
-
-    case site: SiteOut => siteHandler(site)
     case msg           => roomHandler(msg)
   }
 
