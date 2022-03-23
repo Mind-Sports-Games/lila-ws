@@ -6,15 +6,17 @@ import strategygames.{ P2, Player => PlayerIndex, P1, Speed }
 sealed trait LilaOut
 
 sealed trait SiteOut  extends LilaOut
-sealed trait LobbyOut extends LilaOut
+
 sealed trait RoomOut  extends LilaOut
 sealed trait SimulOut extends RoomOut
 sealed trait TourOut  extends RoomOut
 sealed trait StudyOut extends RoomOut
 sealed trait RoundOut extends RoomOut
 sealed trait RacerOut extends RoomOut
+sealed trait LobbyOut extends RoomOut
 
-sealed trait AnyRoomOut extends RoundOut with StudyOut with TourOut with SimulOut with RacerOut
+
+sealed trait AnyRoomOut extends RoundOut with StudyOut with TourOut with SimulOut with RacerOut with LobbyOut
 
 object LilaOut {
 
