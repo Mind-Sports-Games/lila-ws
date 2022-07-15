@@ -29,8 +29,8 @@ final class CrowdJson(
       ClientIn.Crowd(
         Json
           .obj(
-            "p1"    -> (crowd.players.p1 > 0),
-            "p2"    -> (crowd.players.p2 > 0),
+            "p1"       -> (crowd.players.p1 > 0),
+            "p2"       -> (crowd.players.p2 > 0),
             "watchers" -> spectators
           )
       )

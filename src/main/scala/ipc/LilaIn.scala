@@ -24,7 +24,6 @@ object LilaIn {
   sealed trait Challenge extends Room
   sealed trait Racer     extends Room
   sealed trait Lobby     extends Room
-  
 
   sealed trait AnyRoom
       extends Simul
@@ -120,7 +119,8 @@ object LilaIn {
     def write = s"r/do $fullId ${Json.stringify(payload)}"
   }
 
-  case class RoundMove(fullId: Game.FullId, gf: GameFamily, uci: Uci, blur: Boolean, lag: MoveMetrics) extends Round {
+  case class RoundMove(fullId: Game.FullId, gf: GameFamily, uci: Uci, blur: Boolean, lag: MoveMetrics)
+      extends Round {
     private def centis(c: Option[Centis]) = optional(c.map(_.centis.toString))
     def write =
       s"r/move $fullId ${gf.id} ${uci.uci} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)}"
@@ -143,7 +143,8 @@ object LilaIn {
     def write = s"r/report $fullId $ip ${optional(userId)} $name"
   }
 
-  case class RoundFlag(gameId: Game.Id, playerIndex: PlayerIndex, playerId: Option[Game.PlayerId]) extends Round {
+  case class RoundFlag(gameId: Game.Id, playerIndex: PlayerIndex, playerId: Option[Game.PlayerId])
+      extends Round {
     def write = s"r/flag $gameId ${writePlayerIndex(playerIndex)} ${optional(playerId.map(_.value))}"
   }
 
@@ -151,7 +152,8 @@ object LilaIn {
     def write = s"r/bye $fullId"
   }
 
-  case class PlayerChatSay(roomId: RoomId, userIdOrPlayerIndex: Either[User.ID, PlayerIndex], msg: String) extends Round {
+  case class PlayerChatSay(roomId: RoomId, userIdOrPlayerIndex: Either[User.ID, PlayerIndex], msg: String)
+      extends Round {
     def author = userIdOrPlayerIndex.fold(identity, writePlayerIndex)
     def write  = s"chat/say $roomId $author $msg"
   }
@@ -182,8 +184,8 @@ object LilaIn {
     def write = s"req/response $reqId $value"
   }
 
-  private def commas(as: Iterable[Any]): String   = if (as.isEmpty) "-" else as mkString ","
-  private def boolean(b: Boolean): String         = if (b) "+" else "-"
-  private def optional(s: Option[String]): String = s getOrElse "-"
-  private def writePlayerIndex(c: PlayerIndex): String        = c.fold("w", "b")
+  private def commas(as: Iterable[Any]): String        = if (as.isEmpty) "-" else as mkString ","
+  private def boolean(b: Boolean): String              = if (b) "+" else "-"
+  private def optional(s: Option[String]): String      = s getOrElse "-"
+  private def writePlayerIndex(c: PlayerIndex): String = c.fold("w", "b")
 }
