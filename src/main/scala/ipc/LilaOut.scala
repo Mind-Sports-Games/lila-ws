@@ -5,7 +5,7 @@ import strategygames.{ P2, Player => PlayerIndex, P1, Speed }
 
 sealed trait LilaOut
 
-sealed trait SiteOut  extends LilaOut
+sealed trait SiteOut extends LilaOut
 
 sealed trait RoomOut  extends LilaOut
 sealed trait SimulOut extends RoomOut
@@ -14,7 +14,6 @@ sealed trait StudyOut extends RoomOut
 sealed trait RoundOut extends RoomOut
 sealed trait RacerOut extends RoomOut
 sealed trait LobbyOut extends RoomOut
-
 
 sealed trait AnyRoomOut extends RoundOut with StudyOut with TourOut with SimulOut with RacerOut with LobbyOut
 
@@ -86,15 +85,15 @@ object LilaOut {
       flags: RoundEventFlags,
       tpe: String,
       data: JsonString
-  )                                                                                   extends RoundOut
-  case class RoundTourStanding(tourId: Tour.ID, data: JsonString)                     extends RoundOut
-  case class RoundResyncPlayer(fullId: Game.FullId)                                   extends RoundOut
-  case class RoundGone(fullId: Game.FullId, v: Boolean)                               extends RoundOut
-  case class RoundGoneIn(fullId: Game.FullId, seconds: Int)                           extends RoundOut
-  case class RoundBotOnline(gameId: Game.Id, playerIndex: PlayerIndex, v: Boolean)                extends RoundOut
-  case class GameStart(users: List[User.ID])                                          extends RoundOut
+  )                                                                                         extends RoundOut
+  case class RoundTourStanding(tourId: Tour.ID, data: JsonString)                           extends RoundOut
+  case class RoundResyncPlayer(fullId: Game.FullId)                                         extends RoundOut
+  case class RoundGone(fullId: Game.FullId, v: Boolean)                                     extends RoundOut
+  case class RoundGoneIn(fullId: Game.FullId, seconds: Int)                                 extends RoundOut
+  case class RoundBotOnline(gameId: Game.Id, playerIndex: PlayerIndex, v: Boolean)          extends RoundOut
+  case class GameStart(users: List[User.ID])                                                extends RoundOut
   case class GameFinish(gameId: Game.Id, winner: Option[PlayerIndex], users: List[User.ID]) extends RoundOut
-  case class TvSelect(gameId: Game.Id, speed: Speed, json: JsonString)          extends RoundOut
+  case class TvSelect(gameId: Game.Id, speed: Speed, json: JsonString)                      extends RoundOut
 
   // racer
 
@@ -329,9 +328,9 @@ object LilaOut {
     }
   }
 
-  def commas(str: String): Array[String]            = if (str == "-") Array.empty else str split ','
-  def boolean(str: String): Boolean                 = str == "+"
-  def optional(str: String): Option[String]         = if (str == "-") None else Some(str)
+  def commas(str: String): Array[String]                        = if (str == "-") Array.empty else str split ','
+  def boolean(str: String): Boolean                             = str == "+"
+  def optional(str: String): Option[String]                     = if (str == "-") None else Some(str)
   def readPlayerIndex(str: String): PlayerIndex                 = PlayerIndex.fromP1(str == "w")
   def readOptionalPlayerIndex(str: String): Option[PlayerIndex] = optional(str) map readPlayerIndex
 }
