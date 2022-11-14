@@ -74,7 +74,7 @@ final class LilaHandler(
       }
     case LobbyPairings(pairings) =>
       pairings.foreach { case (sri, fullId) => publish(_ sri sri, ClientIn.LobbyPairing(fullId)) }
-    case msg => roomHandler(msg)
+    case msg           => roomHandler(msg)
   }
 
   private val simulHandler: Emit[LilaOut] = {

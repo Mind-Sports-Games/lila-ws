@@ -74,7 +74,7 @@ object Fens {
               Position(_, FEN(gfam.gameLogic, fenS), None, turnPlayerIndex)
             }
           }
-          case _ => None
+          case _                     => None
         }).fold(watched) { position =>
           val msg = ClientIn.Fen(gameId, position)
           watched.clients foreach { _ ! msg }
@@ -84,9 +84,8 @@ object Fens {
     )
 
   // ...,"uci":"h2g2","san":"Rg2","fen":"r2qb1k1/p2nbrpn/6Np/3pPp1P/1ppP1P2/2P1B3/PP2B1R1/R2Q1NK1",...,"gf":0,...,"clock":{"p1":121.88,"p2":120.94}
-  private val MoveRegex = """uci":"([^"]+)".+fen":"([^"]+).+gf":(\d+)""".r.unanchored
-  private val MoveClockRegex =
-    """uci":"([^"]+)".+fen":"([^"]+).+gf":(\d+).+p1":(\d+).+p2":(\d+)""".r.unanchored
+  private val MoveRegex      = """uci":"([^"]+)".+fen":"([^"]+).+gf":(\d+)""".r.unanchored
+  private val MoveClockRegex = """uci":"([^"]+)".+fen":"([^"]+).+gf":(\d+).+p1":(\d+).+p2":(\d+)""".r.unanchored
 
   def size = games.size
 }

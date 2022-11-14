@@ -37,10 +37,9 @@ final class Controller(
         case (isTroll) =>
           endpoint(
             name = "lobby",
-            behavior =
-              LobbyClientActor.start(RoomActor.State(RoomId("lobbyhome"), isTroll), fromVersion(req)) {
-                Deps(emit, Req(req, sri, user), services)
-              },
+            behavior = LobbyClientActor.start(RoomActor.State(RoomId("lobbyhome"), isTroll), fromVersion(req)) {
+              Deps(emit, Req(req, sri, user), services)
+            },
             credits = 30,
             interval = 30.seconds
           )

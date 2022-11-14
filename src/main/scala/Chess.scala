@@ -21,15 +21,11 @@ object Chess {
     Monitor.time(_.chessMoveTime) {
       try {
         lazy val fullCaptureFields =
-          req.uci
-            .flatMap(m =>
-              Uci.Move.apply(
-                req.variant.gameLogic,
-                req.variant.gameFamily,
-                m
-              )
-            )
-            .flatMap(_.capture)
+          req.uci.flatMap(m => Uci.Move.apply(
+            req.variant.gameLogic,
+            req.variant.gameFamily,
+            m
+          )).flatMap(_.capture)
         Game(req.variant.gameLogic, req.variant.some, Some(req.fen))(
           orig = req.orig,
           dest = req.dest,
@@ -38,68 +34,59 @@ object Chess {
           captures = fullCaptureFields,
           partialCaptures = req.fullCapture.getOrElse(false)
         ).toOption flatMap { case (game, move) =>
-          game.pgnMoves.lastOption map { san =>
-            {
-              val movable = game.situation playable false
-              val captLen = (game.situation, req.dest) match {
-                case (Situation.Draughts(sit), Pos.Draughts(dest)) =>
-                  if (sit.ghosts > 0) sit.captureLengthFrom(dest)
-                  else sit.allMovesCaptureLength.some
-                case _ => None
-              }
-              val validMoves: Map[strategygames.draughts.Pos, List[strategygames.draughts.Move]] =
-                (game.situation, req.dest) match {
-                  case (Situation.Draughts(sit), Pos.Draughts(dest)) =>
-                    getValidMoves(
-                      sit,
-                      if (sit.ghosts > 0) dest.some else None,
-                      req.fullCapture.getOrElse(false)
-                    )
-                  case _ => Map.empty
-                }
-              val truncatedMoves =
-                if (req.fullCapture.getOrElse(false) && captLen.getOrElse(0) > 1)
-                  truncateMoves(validMoves).some
-                else None
-              makeNode(
-                game,
-                Uci.WithSan(
-                  req.variant.gameLogic,
-                  Uci(
-                    req.variant.gameLogic,
-                    move,
-                    req.variant.gameLogic match {
-                      case GameLogic.Draughts() => fullCaptureFields.isDefined
-                      case _                    => false
-                    }
-                  ),
-                  san
-                ),
-                req.path,
-                req.chapterId,
-                dests = req.variant match {
-                  case Variant.Draughts(variant) => {
-                    val truncatedDests = truncatedMoves.map {
-                      _ mapValues { _ flatMap (uci => variant.boardSize.pos.posAt(uci.takeRight(2))) }
-                    }
-                    val draughtsDests: Map[strategygames.Pos, List[strategygames.Pos]] =
-                      truncatedDests
-                        .getOrElse(validMoves.view.mapValues { _ map (_.dest) })
-                        .to(Map)
-                        .map { case (p, m) => (Pos.Draughts(p), m.map(Pos.Draughts)) }
-                    if (movable) draughtsDests else Map.empty
-                  }
-                  case _ => if (movable) game.situation.destinations else Map.empty
-                },
-                destsUci = req.variant.gameLogic match {
-                  case GameLogic.Draughts() =>
-                    if (movable) truncatedMoves.map(_.values.toList.flatten) else None
-                  case _ => None
-                },
-                captureLength = if (movable) captLen else None
-              )
+          game.pgnMoves.lastOption map { san => {
+            val movable = game.situation playable false
+            val captLen = (game.situation, req.dest) match {
+              case (Situation.Draughts(sit), Pos.Draughts(dest)) =>
+                if (sit.ghosts > 0) sit.captureLengthFrom(dest)
+                else sit.allMovesCaptureLength.some
+              case _ => None
             }
-          }
+            val validMoves: Map[strategygames.draughts.Pos, List[strategygames.draughts.Move]] =
+              (game.situation, req.dest) match {
+                case (Situation.Draughts(sit), Pos.Draughts(dest)) => getValidMoves(
+                  sit,
+                  if (sit.ghosts > 0) dest.some else None,
+                  req.fullCapture.getOrElse(false)
+                )
+                case _ => Map.empty
+              }
+            val truncatedMoves =
+              if (req.fullCapture.getOrElse(false) && captLen.getOrElse(0) > 1)
+                truncateMoves(validMoves).some
+              else None
+            makeNode(
+              game,
+              Uci.WithSan(
+                req.variant.gameLogic,
+                Uci(req.variant.gameLogic, move, req.variant.gameLogic match {
+                  case GameLogic.Draughts() => fullCaptureFields.isDefined
+                  case _ => false
+                }),
+                san
+              ),
+              req.path,
+              req.chapterId,
+              dests = req.variant match {
+                case Variant.Draughts(variant) => {
+                  val truncatedDests = truncatedMoves.map { _ mapValues { _ flatMap (
+                    uci => variant.boardSize.pos.posAt(uci.takeRight(2))
+                  ) } }
+                  val draughtsDests: Map[strategygames.Pos,List[strategygames.Pos]] =
+                    truncatedDests.getOrElse(validMoves.view.mapValues{ _ map (_.dest) })
+                      .to(Map).map{case(p, m) => (Pos.Draughts(p), m.map(Pos.Draughts))}
+                  if (movable) draughtsDests else Map.empty
+                }
+                case _ => if (movable) game.situation.destinations else Map.empty
+              },
+              destsUci = req.variant.gameLogic match {
+                case GameLogic.Draughts() =>
+                  if (movable) truncatedMoves.map(_.values.toList.flatten) else None
+                case _ => None
+              },
+              captureLength = if (movable) captLen else None
+            )
+          }}
         } getOrElse ClientIn.StepFailure
       } catch {
         case e: java.lang.ArrayIndexOutOfBoundsException =>
@@ -115,16 +102,17 @@ object Chess {
           req.variant.gameLogic,
           req.variant.some,
           Some(req.fen)
-        ).drop(req.role, req.pos).toOption flatMap { case (game, drop) =>
-          game.pgnMoves.lastOption map { san =>
-            makeNode(
-              game,
-              Uci.WithSan(req.variant.gameLogic, Uci(req.variant.gameLogic, drop), san),
-              req.path,
-              req.chapterId,
-              if (game.situation playable false) game.situation.destinations else Map.empty
-            )
-          }
+        ).drop(req.role, req.pos).toOption flatMap {
+          case (game, drop) =>
+            game.pgnMoves.lastOption map { san =>
+              makeNode(
+                game,
+                Uci.WithSan(req.variant.gameLogic, Uci(req.variant.gameLogic, drop), san),
+                req.path,
+                req.chapterId,
+                if (game.situation playable false) game.situation.destinations else Map.empty
+              )
+            }
         } getOrElse ClientIn.StepFailure
       } catch {
         case e: java.lang.ArrayIndexOutOfBoundsException =>
@@ -152,26 +140,25 @@ object Chess {
                       variant.boardSize.pos.posAt(uci.substring(uci.length - 2))
                     }
                   else None
-                val validMoves: Map[strategygames.draughts.Pos, List[strategygames.draughts.Move]] =
+                val validMoves: Map[strategygames.draughts.Pos,List[strategygames.draughts.Move]] =
                   getValidMoves(sit, orig, req.fullCapture.getOrElse(false))
                 val captureLength: Int =
-                  orig.fold(sit.allMovesCaptureLength)(sit.captureLengthFrom(_).getOrElse(0))
-                val truncatedMoves: Option[MapView[strategygames.draughts.Pos, List[String]]] =
+                    orig.fold(sit.allMovesCaptureLength)(sit.captureLengthFrom(_).getOrElse(0))
+                val truncatedMoves: Option[MapView[strategygames.draughts.Pos,List[String]]] =
                   if (!isInitial && req.fullCapture.getOrElse(false) && captureLength > 1)
                     Some(truncateMoves(validMoves))
                   else None
-                val truncatedDests = truncatedMoves.map {
-                  _ mapValues { _ flatMap (uci => variant.boardSize.pos.posAt(uci.takeRight(2))) }
-                }
+                val truncatedDests = truncatedMoves.map { _ mapValues { _ flatMap (
+                  uci => variant.boardSize.pos.posAt(uci.takeRight(2))
+                ) } }
                 val destsToConvert: Map[Pos, List[Pos]] =
-                  truncatedDests
-                    .getOrElse(validMoves.view.mapValues { _ map (_.dest) })
-                    .to(Map)
-                    .map { case (p, lp) => (Pos.Draughts(p), lp.map(Pos.Draughts)) }
+                  truncatedDests.getOrElse(validMoves.view.mapValues{ _ map (_.dest) }).to(Map)
+                    .map{case(p, lp) => (Pos.Draughts(p), lp.map(Pos.Draughts))}
                 val destStr = json.destString(destsToConvert)
                 if (captureLength > 0) s"#$captureLength $destStr"
                 else destStr
-              } else ""
+              }
+              else ""
             case _ =>
               if (isInitial) initialChessDests
               else if (sit.playable(false)) json.destString(sit.destinations)
@@ -194,11 +181,11 @@ object Chess {
                     variant.boardSize.pos.posAt(uci.substring(uci.length - 2))
                   }
                 else None
-              val validMoves: Map[strategygames.draughts.Pos, List[strategygames.draughts.Move]] =
+              val validMoves: Map[strategygames.draughts.Pos,List[strategygames.draughts.Move]] =
                 getValidMoves(sit, orig, req.fullCapture.getOrElse(false))
               val captureLength: Int =
-                orig.fold(sit.allMovesCaptureLength)(sit.captureLengthFrom(_).getOrElse(0))
-              val truncatedMoves: Option[MapView[strategygames.draughts.Pos, List[String]]] =
+                  orig.fold(sit.allMovesCaptureLength)(sit.captureLengthFrom(_).getOrElse(0))
+              val truncatedMoves: Option[MapView[strategygames.draughts.Pos,List[String]]] =
                 if (!isInitial && req.fullCapture.getOrElse(false) && captureLength > 1)
                   Some(truncateMoves(validMoves))
                 else None
@@ -211,7 +198,7 @@ object Chess {
 
   def apply(req: ClientOut.Opening): Option[ClientIn.Opening] =
     if (Variant.openingSensibleVariants(req.variant.gameLogic)(req.variant))
-      FullOpeningDB.findByFen(req.variant.gameLogic, req.fen) map { ClientIn.Opening(req.path, _) }
+      FullOpeningDB.findByFen(req.variant.gameLogic, req.fen) map {ClientIn.Opening(req.path, _)}
     else None
 
   private def makeNode(
@@ -236,10 +223,7 @@ object Chess {
       destsUci = destsUci,
       captureLength = captureLength,
       opening =
-        if (
-          game.turns <= 30 && Variant
-            .openingSensibleVariants(game.board.variant.gameLogic)(game.board.variant)
-        )
+        if (game.turns <= 30 && Variant.openingSensibleVariants(game.board.variant.gameLogic)(game.board.variant))
           FullOpeningDB.findByFen(game.board.variant.gameLogic, fen)
         else None,
       drops = if (movable) game.situation.drops else Some(Nil),
@@ -258,7 +242,7 @@ object Chess {
 
   //draughts
   private def uniqueUci(otherUcis: List[BoardWithUci], uci: BoardWithUci) = {
-    var i      = 2
+    var i = 2
     var unique = uci._2.slice(0, i)
     while (i + 2 <= uci._2.length && otherUcis.exists(_._2.startsWith(unique))) {
       i += 2
@@ -270,11 +254,7 @@ object Chess {
   }
 
   //draughts
-  private def getValidMoves(
-      sit: draughts.Situation,
-      from: Option[draughts.Pos],
-      fullCapture: Boolean
-  ): Map[strategygames.draughts.Pos, List[strategygames.draughts.Move]] =
+  private def getValidMoves(sit: draughts.Situation, from: Option[draughts.Pos], fullCapture: Boolean): Map[strategygames.draughts.Pos,List[strategygames.draughts.Move]] =
     from.fold(if (fullCapture) sit.validMovesFinal else sit.validMoves) { pos =>
       Map(pos -> sit.movesFrom(pos, fullCapture))
     }
@@ -282,16 +262,13 @@ object Chess {
   //draughts
   private def truncateMoves(validMoves: Map[draughts.Pos, List[draughts.Move]]) = {
     var truncated = false
-    val truncatedMoves = validMoves map { case (pos, moves) =>
-      if (moves.size <= 1) pos -> moves.map(m => (m.after.some, m.toUci.uci))
-      else
-        pos -> moves.foldLeft(List[BoardWithUci]()) { (acc, move) =>
-          val sameDestUcis = moves
-            .filter(m => m != move && m.dest == move.dest && (m.orig == m.dest || m.after != move.after))
-            .map(m => (m.after.some, m.toUci.uci))
+    val truncatedMoves = validMoves map {
+      case (pos, moves) =>
+        if (moves.size <= 1) pos -> moves.map(m => (m.after.some, m.toUci.uci))
+        else pos -> moves.foldLeft(List[BoardWithUci]()) { (acc, move) =>
+          val sameDestUcis = moves.filter(m => m != move && m.dest == move.dest && (m.orig == m.dest || m.after != move.after)).map(m => (m.after.some, m.toUci.uci))
           val uci = (move.after.some, move.toUci.uci)
-          val newUci =
-            if (sameDestUcis.isEmpty && move.orig != move.dest) uci else uniqueUci(sameDestUcis, uci)
+          val newUci = if (sameDestUcis.isEmpty && move.orig != move.dest) uci else uniqueUci(sameDestUcis, uci)
           if (!acc.contains(newUci)) {
             if (newUci._2.length != uci._2.length) truncated = true
             newUci :: acc
@@ -306,20 +283,14 @@ object Chess {
 
   //draughts
   @scala.annotation.tailrec
-  private def truncateUcis(
-      validUcis: Map[draughts.Pos, List[BoardWithUci]]
-  ): Map[draughts.Pos, List[BoardWithUci]] = {
+  private def truncateUcis(validUcis: Map[draughts.Pos, List[BoardWithUci]]): Map[draughts.Pos, List[BoardWithUci]] = {
     var truncated = false
-    val truncatedUcis = validUcis map { case (pos, uciList) =>
-      if (uciList.size <= 1) pos -> uciList
-      else
-        pos -> uciList.foldLeft(List[BoardWithUci]()) { (acc, uci) =>
+    val truncatedUcis = validUcis map {
+      case (pos, uciList) =>
+        if (uciList.size <= 1) pos -> uciList
+        else pos -> uciList.foldLeft(List[BoardWithUci]()) { (acc, uci) =>
           val dest = uci._2.takeRight(2)
-          val sameDestUcis = uciList.filter(u =>
-            u != uci && u._2.takeRight(2) == dest && (u._2.startsWith(
-              dest
-            ) || (u._1.isEmpty && uci._1.isEmpty) || u._1 != uci._1)
-          )
+          val sameDestUcis = uciList.filter(u => u != uci && u._2.takeRight(2) == dest && (u._2.startsWith(dest) || (u._1.isEmpty && uci._1.isEmpty) || u._1 != uci._1))
           val newUci = if (sameDestUcis.isEmpty) uci else uniqueUci(sameDestUcis, uci)
           if (!acc.contains(newUci)) {
             if (newUci._2.length != uci._2.length) truncated = true
@@ -364,19 +335,16 @@ object Chess {
 
     implicit val pocketWriter: OWrites[Pocket] = OWrites { v =>
       JsObject(
-        Role
-          .storable(v.roles.headOption match {
-            case Some(r) =>
-              r match {
-                case Role.ChessRole(_)   => GameLogic.Chess()
-                case Role.FairySFRole(_) => GameLogic.FairySF()
-                case _                   => sys.error("Pocket not implemented for GameLogic")
-              }
-            case None => GameLogic.Chess()
-          })
-          .flatMap { role =>
-            Some(v.roles.count(role == _)).filter(0 < _).map { count => role.groundName -> JsNumber(count) }
+        Role.storable(v.roles.headOption match {
+          case Some(r) => r match {
+            case Role.ChessRole(_)   => GameLogic.Chess()
+            case Role.FairySFRole(_) => GameLogic.FairySF()
+            case _ => sys.error("Pocket not implemented for GameLogic")
           }
+          case None => GameLogic.Chess()
+        }).flatMap { role =>
+          Some(v.roles.count(role == _)).filter(0 < _).map { count => role.groundName -> JsNumber(count) }
+        }
       )
     }
     implicit val pocketDataWriter: OWrites[PocketData] = OWrites { v =>
