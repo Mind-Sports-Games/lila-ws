@@ -172,9 +172,12 @@ object Chess {
                 if (captureLength > 0) s"#$captureLength $destStr"
                 else destStr
               } else ""
-            case _ =>
+            case (Situation.Chess(_), Variant.Chess(_)) =>
               if (isInitial) initialChessDests
               else if (sit.playable(false)) json.destString(sit.destinations)
+              else ""
+            case _ =>
+              if (sit.playable(false)) json.destString(sit.destinations)
               else ""
           }
         },
@@ -243,6 +246,11 @@ object Chess {
           FullOpeningDB.findByFen(game.board.variant.gameLogic, fen)
         else None,
       drops = if (movable) game.situation.drops else Some(Nil),
+      dropsByRole = game.situation match {
+        case (Situation.FairySF(_)) =>
+          game.situation.dropsByRole
+        case _ => None
+      },
       pocketData = game.situation.board.pocketData,
       chapterId = chapterId
     )

@@ -1,7 +1,7 @@
 package lila.ws
 package ipc
 
-import strategygames.{ Player => PlayerIndex, PocketData, Pos }
+import strategygames.{ Player => PlayerIndex, PocketData, Pos, Role }
 import strategygames.format.{ FEN, Uci, UciCharPair }
 import strategygames.opening.FullOpening
 import lila.ws.Position
@@ -11,6 +11,25 @@ import play.api.libs.json._
 sealed trait ClientIn extends ClientMsg {
   def write: String
 }
+
+private object DropsByRole {
+
+  def json(drops: Map[Role, List[Pos]]) =
+    if (drops.isEmpty) JsNull
+    else {
+      val sb    = new java.lang.StringBuilder(128)
+      var first = true
+      drops foreach { case (orig, dests) =>
+        if (first) first = false
+        else sb append " "
+        sb append orig.forsyth
+        dests foreach { sb append _.key }
+      }
+      JsString(sb.toString)
+    }
+
+}
+
 
 object ClientIn {
 
@@ -146,6 +165,7 @@ object ClientIn {
       captureLength: Option[Int],
       opening: Option[FullOpening],
       drops: Option[List[Pos]],
+      dropsByRole: Option[Map[Role, List[Pos]]],
       pocketData: Option[PocketData],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
@@ -164,7 +184,8 @@ object ClientIn {
                 "san"      -> move.san,
                 "dests"    -> dests,
                 "destsUci" -> destsUci,
-                "children" -> JsArray()
+                "children" -> JsArray(),
+                "dropsByRole" -> DropsByRole.json(dropsByRole.getOrElse(Map.empty))
               )
               .add("opening" -> opening)
               .add("captLen" -> captureLength)
