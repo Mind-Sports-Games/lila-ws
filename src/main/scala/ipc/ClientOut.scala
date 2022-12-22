@@ -164,11 +164,11 @@ object ClientOut {
                 path <- d str "path"
                 fen  <- d str "fen"
                 variant   = dataVariant(d, lib)
-                chapterId = d str "ch" map ChapterId.apply
-                promotion = (d str "promotion").flatMap(r =>
-                    Role.allByGroundName(lib, variant.gameFamily).get(r).flatMap(r => 
-                      Role.promotable(lib, variant.gameFamily, r.name)
-                    )
+                chapterId = d.str("ch").map(ChapterId.apply)
+                promotion = d.str("promotion").flatMap(r =>
+                    Role.allByGroundName(lib, variant.gameFamily)
+                      .get(r)
+                      .flatMap(r => Role.allPromotableByName(lib).get(r.name))
                 )
                 uci         = d str "uci"
                 fullCapture = d boolean "fullCapture"
