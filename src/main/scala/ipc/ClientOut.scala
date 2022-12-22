@@ -1,6 +1,7 @@
 package lila.ws
 package ipc
 
+import scala.util.chaining._
 import strategygames.format.{ FEN, Uci }
 import strategygames.variant.Variant
 import strategygames.{
@@ -131,8 +132,26 @@ object ClientOut {
   case class RacerScore(score: Int) extends ClientOutRacer
   case object RacerJoin             extends ClientOutRacer
 
-  // impl
+  // Strategy games has few issues right now, so we have to implement our own
+  // lookup that turns some role into a promotable role.
+  // Step 1, turn a ground name into a "Role". Note that we can't currently match
+  //         between Role and Promotable role, because the wrapper layer
+  //         currently wraps them all as a role
+  def groundToRole(lib: GameLogic, variant: Variant)(groundName: Option[String]): Option[Role] =
+    groundName.flatMap(
+      Role
+        .allByGroundName(lib, variant.gameFamily)
+        .get(_)
+    )
 
+  // Step 2, Turn a role into a Promotable role by looping through all of the promotable
+  //         roles of a given given gamelogic and seeing if one exists by that name.
+  // TODO: I would try and make this more efficient, but it would result in
+  //       some leaking of abstractions here, which I don't want.
+  def roleToPromotable(lib: GameLogic)(role: Option[Role]): Option[PromotableRole] =
+    role.flatMap(r => Role.allPromotable(lib).filter(_.name == r.name).headOption)
+
+  // impl
   def parse(str: String): Try[ClientOut] =
     if (str == "null" || str == """{"t":"p"}""") emptyPing
     else
@@ -165,11 +184,10 @@ object ClientOut {
                 fen  <- d str "fen"
                 variant   = dataVariant(d, lib)
                 chapterId = d.str("ch").map(ChapterId.apply)
-                promotion = d.str("promotion").flatMap(r =>
-                    Role.allByGroundName(lib, variant.gameFamily)
-                      .get(r)
-                      .flatMap(r => Role.allPromotableByName(lib).get(r.toString))
-                )
+                promotion = d
+                  .str("promotion")
+                  .pipe(groundToRole(lib, variant))
+                  .pipe(roleToPromotable(lib))
                 uci         = d str "uci"
                 fullCapture = d boolean "fullCapture"
               } yield AnaMove(
