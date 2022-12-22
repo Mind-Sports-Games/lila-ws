@@ -168,7 +168,7 @@ object ClientOut {
                 promotion = d.str("promotion").flatMap(r =>
                     Role.allByGroundName(lib, variant.gameFamily)
                       .get(r)
-                      .flatMap(r => Role.allPromotableByName(lib).get(r.name))
+                      .flatMap(r => Role.allPromotableByName(lib).get(r.toString))
                 )
                 uci         = d str "uci"
                 fullCapture = d boolean "fullCapture"
