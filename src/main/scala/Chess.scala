@@ -38,9 +38,9 @@ object Chess {
           captures = fullCaptureFields,
           partialCaptures = req.fullCapture.getOrElse(false)
         ).toOption flatMap { case (game, move) =>
-          game.pgnMoves.lastOption map { san =>
+          game.pgnMoves.lastOption.map { san =>
             {
-              val movable = game.situation playable false
+              val movable = game.situation.playable(false)
               val captLen = (game.situation, req.dest) match {
                 case (Situation.Draughts(sit), Pos.Draughts(dest)) =>
                   if (sit.ghosts > 0) sit.captureLengthFrom(dest)
@@ -122,7 +122,7 @@ object Chess {
               Uci.WithSan(req.variant.gameLogic, Uci(req.variant.gameLogic, drop), san),
               req.path,
               req.chapterId,
-              if (game.situation playable false) game.situation.destinations else Map.empty
+              if (game.situation.playable(false)) game.situation.destinations else Map.empty
             )
           }
         } getOrElse ClientIn.StepFailure
