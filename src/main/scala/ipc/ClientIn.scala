@@ -30,7 +30,6 @@ private object DropsByRole {
 
 }
 
-
 object ClientIn {
 
   import Chess.json._
@@ -177,14 +176,14 @@ object ClientIn {
             "path" -> path,
             "node" -> Json
               .obj(
-                "ply"      -> ply,
-                "fen"      -> fen,
-                "id"       -> id,
-                "uci"      -> move.uci,
-                "san"      -> move.san,
-                "dests"    -> dests,
-                "destsUci" -> destsUci,
-                "children" -> JsArray(),
+                "ply"         -> ply,
+                "fen"         -> fen,
+                "id"          -> id,
+                "uci"         -> move.uci,
+                "san"         -> move.san,
+                "dests"       -> dests,
+                "destsUci"    -> destsUci,
+                "children"    -> JsArray(),
                 "dropsByRole" -> DropsByRole.json(dropsByRole.getOrElse(Map.empty))
               )
               .add("opening" -> opening)
