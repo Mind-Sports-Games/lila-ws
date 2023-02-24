@@ -64,9 +64,9 @@ object Fens {
             val gfam = GameFamily(gf.toInt)
             for {
               uci <- Uci(gfam.gameLogic, gfam, uciS)
-              p1  <- wcS.toIntOption
-              p2  <- bcS.toIntOption
-            } yield Position(uci, FEN(gfam.gameLogic, fenS), Some(Clock(p1, p2)), turnPlayerIndex)
+              wc  <- wcS.toIntOption
+              bc  <- bcS.toIntOption
+            } yield Position(uci, FEN(gfam.gameLogic, fenS), Some(Clock(wc, bc)), turnPlayerIndex)
           }
           case MoveRegex(uciS, fenS, gf) => {
             val gfam = GameFamily(gf.toInt)
