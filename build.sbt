@@ -36,6 +36,14 @@ libraryDependencies += "com.roundeights"            %% "hasher"                 
 resolvers += Resolver.sonatypeRepo("snapshots")
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/Mind-Sports-Games/lila-maven/master"
 
+val localMaven = sys.env
+  .get("LILA_MAVEN_RESOLVERS")
+  .map(_.split(",").zipWithIndex.map { case (x, i) => s"local-maven-$i" at x })
+  .map(_.toSeq)
+  .getOrElse(Seq())
+
+resolvers ++= localMaven
+
 scalacOptions ++= Seq(
   "-explaintypes",
   "-feature",
