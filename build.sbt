@@ -19,7 +19,7 @@ libraryDependencies += "io.lettuce"                  % "lettuce-core"           
 libraryDependencies += "io.netty"                    % "netty-handler"                % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-codec-http"             % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
-libraryDependencies += "org.playstrategy"           %% "strategygames"                % "10.2.1-pstrat84"
+libraryDependencies += "org.playstrategy"           %% "strategygames"                % "10.2.1-pstrat87"
 libraryDependencies += "com.typesafe.akka"          %% "akka-actor-typed"             % akkaVersion
 libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"                   % akkaVersion
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"                % "3.9.3"
@@ -35,6 +35,14 @@ libraryDependencies += "com.roundeights"            %% "hasher"                 
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/Mind-Sports-Games/lila-maven/master"
+
+val localMaven = sys.env
+  .get("LILA_MAVEN_RESOLVERS")
+  .map(_.split(",").zipWithIndex.map { case (x, i) => s"local-maven-$i" at x })
+  .map(_.toSeq)
+  .getOrElse(Seq())
+
+resolvers ++= localMaven
 
 scalacOptions ++= Seq(
   "-explaintypes",
