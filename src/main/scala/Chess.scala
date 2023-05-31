@@ -1,11 +1,12 @@
 package lila.ws
 
 import scala.collection.MapView
+import scala.util.chaining._
 
 import play.api.libs.json._
 import strategygames.format.{ FEN, Forsyth, Uci, UciCharPair }
 import strategygames.opening.{ FullOpening, FullOpeningDB }
-import strategygames.{ Game, GameLogic, Pocket, PocketData, Pos, Role, Situation }
+import strategygames.{ Game, GameLogic, MoveMetrics, Pocket, PocketData, Pos, Role, Situation }
 import strategygames.variant.Variant
 import strategygames.draughts
 import com.typesafe.scalalogging.Logger
@@ -14,6 +15,11 @@ import cats.syntax.option._
 import ipc._
 
 object Chess {
+
+  def pp[A](s: String, a: A): A = {
+    println(s"${s}: ${a}")
+    a
+  }
 
   private val logger = Logger(getClass)
 
@@ -30,7 +36,7 @@ object Chess {
               )
             )
             .flatMap(_.capture)
-        Game(req.variant.gameLogic, req.variant.some, Some(req.fen))(
+        Game(req.variant.gameLogic, req.variant.some, pp("move fen", Some(req.fen)))(
           orig = req.orig,
           dest = req.dest,
           promotion = req.promotion,
@@ -104,6 +110,7 @@ object Chess {
       } catch {
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"${req.fen} ${req.variant} ${req.orig}${req.dest}", e)
+          println("1111111111111111111111111111111111111111111111111111111111111")
           ClientIn.StepFailure
       }
     }
@@ -111,21 +118,35 @@ object Chess {
   def apply(req: ClientOut.AnaDrop): ClientIn =
     Monitor.time(_.chessMoveTime) {
       try {
-        Game(
+        val baseGame = Game(
           req.variant.gameLogic,
           req.variant.some,
-          Some(req.fen)
-        ).drop(req.role, req.pos).toOption flatMap { case (game, drop) =>
-          game.pgnMoves.lastOption map { san =>
-            makeNode(
-              game,
-              Uci.WithSan(req.variant.gameLogic, Uci(req.variant.gameLogic, drop), san),
-              req.path,
-              req.chapterId,
-              if (game.situation.playable(false)) game.situation.destinations else Map.empty
-            )
+          pp("fen", Some(req.fen))
+        )
+        val g: Game = pp("halfMove", req.halfMove)
+          .flatMap(m => {
+            Uci(req.variant, s"${m.orig}${m.dest}")
+          })
+          .flatMap(u => baseGame.applyUci(u, MoveMetrics()).toOption)
+          .map(_._1)
+          .getOrElse(baseGame)
+        g.drop(req.role, req.pos)
+          .toOption
+          .flatMap({ case (game, drop) =>
+            game.pgnMoves.lastOption map { san =>
+              makeNode(
+                game,
+                Uci.WithSan(req.variant.gameLogic, Uci(req.variant.gameLogic, drop), san),
+                req.path,
+                req.chapterId,
+                if (game.situation.playable(false)) game.situation.destinations else Map.empty
+              )
+            }
+          })
+          .getOrElse {
+            println("22222222222222222222222222222222222222222222222222222222222")
+            ClientIn.StepFailure
           }
-        } getOrElse ClientIn.StepFailure
       } catch {
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.pos}", e)
@@ -228,6 +249,8 @@ object Chess {
   ): ClientIn.Node = {
     val movable = game.situation playable false
     val fen     = Forsyth.>>(game.board.variant.gameLogic, game)
+    println(s"game.board.variant.gameLogic: ${game.board.variant.gameLogic}")
+    println(s"fen out: ${fen}")
     ClientIn.Node(
       path = path,
       id = UciCharPair(game.board.variant.gameLogic, move.uci),
