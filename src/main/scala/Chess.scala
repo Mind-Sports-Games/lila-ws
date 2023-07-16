@@ -115,17 +115,19 @@ object Chess {
           req.variant.gameLogic,
           req.variant.some,
           Some(req.fen)
-        ).drop(req.role, req.pos).toOption flatMap { case (game, drop) =>
-          game.pgnMoves.lastOption map { san =>
-            makeNode(
-              game,
-              Uci.WithSan(req.variant.gameLogic, Uci(req.variant.gameLogic, drop), san),
-              req.path,
-              req.chapterId,
-              if (game.situation.playable(false)) game.situation.destinations else Map.empty
+        ).drop(req.role, req.pos).toOption.flatMap { case (game, drop) =>
+          game.pgnMoves.lastOption
+            .map(san =>
+              makeNode(
+                game,
+                Uci
+                  .WithSan(req.variant.gameLogic, Uci(req.variant.gameLogic, drop), san),
+                req.path,
+                req.chapterId,
+                if (game.situation.playable(false)) game.situation.destinations else Map.empty
+              )
             )
-          }
-        } getOrElse ClientIn.StepFailure
+        } getOrElse (ClientIn.StepFailure)
       } catch {
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.pos}", e)
