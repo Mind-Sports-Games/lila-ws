@@ -40,6 +40,8 @@ object ClientOut {
 
   case class Opening(variant: Variant, path: Path, fen: FEN) extends ClientOutSite
 
+  case class Move(orig: Pos, dest: Pos)
+
   case class AnaMove(
       orig: Pos,
       dest: Pos,
@@ -60,7 +62,8 @@ object ClientOut {
       path: Path,
       variant: Variant,
       chapterId: Option[ChapterId],
-      payload: JsObject
+      payload: JsObject,
+      halfMove: Option[Move] = None
   ) extends ClientOutSite
 
   case class AnaDests(
@@ -219,7 +222,13 @@ object ClientOut {
                 Path(path),
                 variant,
                 chapterId,
-                o
+                o,
+                (d obj "halfMove").flatMap(halfMove => {
+                  for {
+                    orig <- halfMove str "orig" flatMap (p => Pos.fromKey(lib, p))
+                    dest <- halfMove str "dest" flatMap (p => Pos.fromKey(lib, p))
+                  } yield Move(orig, dest)
+                })
               )
             case "anaDests" =>
               for {
