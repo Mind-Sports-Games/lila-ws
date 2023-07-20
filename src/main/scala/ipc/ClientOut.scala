@@ -63,6 +63,14 @@ object ClientOut {
       payload: JsObject
   ) extends ClientOutSite
 
+  case class AnaPass(
+      fen: FEN,
+      path: Path,
+      variant: Variant,
+      chapterId: Option[ChapterId],
+      payload: JsObject
+  ) extends ClientOutSite
+
   case class AnaDests(
       fen: FEN,
       path: Path,
@@ -221,6 +229,21 @@ object ClientOut {
                 chapterId,
                 o
               )
+            case "anaPass" =>
+              for {
+                d <- o obj "d"
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                path <- d str "path"
+                fen  <- d str "fen"
+                chapterId = d str "ch" map ChapterId.apply
+              } yield AnaPass(
+                FEN(lib, fen),
+                Path(path),
+                variant,
+                chapterId,
+                o
+              )
             case "anaDests" =>
               for {
                 d    <- o obj "d"
@@ -281,6 +304,15 @@ object ClientOut {
                 blur  = d int "b" contains 1
                 ackId = d int "a"
               } yield RoundMove(variant.gameFamily, drop, blur, parseMetrics(d), ackId)
+            case "pass" =>
+              for {
+                d <- o obj "d"
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                pass <- Uci.Pass.apply(lib, variant.gameFamily)
+                blur  = d int "b" contains 1
+                ackId = d int "a"
+              } yield RoundMove(variant.gameFamily, pass, blur, parseMetrics(d), ackId)
             case "hold" =>
               for {
                 d    <- o obj "d"
