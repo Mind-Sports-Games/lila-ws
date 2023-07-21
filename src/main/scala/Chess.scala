@@ -16,11 +16,6 @@ import ipc._
 
 object Chess {
 
-  def pp[A](s: String, a: A): A = {
-    println(s"${s}: ${a}")
-    a
-  }
-
   private val logger = Logger(getClass)
 
   def apply(req: ClientOut.AnaMove): ClientIn =
@@ -36,7 +31,7 @@ object Chess {
               )
             )
             .flatMap(_.capture)
-        Game(req.variant.gameLogic, req.variant.some, pp("move fen", Some(req.fen)))(
+        Game(req.variant.gameLogic, req.variant.some, Some(req.fen))(
           orig = req.orig,
           dest = req.dest,
           promotion = req.promotion,
@@ -106,11 +101,10 @@ object Chess {
               )
             }
           }
-        } getOrElse ClientIn.StepFailure
+        }.getOrElse(ClientIn.StepFailure)
       } catch {
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"${req.fen} ${req.variant} ${req.orig}${req.dest}", e)
-          println("1111111111111111111111111111111111111111111111111111111111111")
           ClientIn.StepFailure
       }
     }
@@ -123,7 +117,7 @@ object Chess {
           req.variant.some,
           Some(req.fen)
         )
-        val g: Game = pp("halfMove", req.halfMove)
+        val g: Game = req.halfMove
           .flatMap(m => {
             Uci(req.variant, s"${m.orig}${m.dest}")
           })
@@ -143,10 +137,7 @@ object Chess {
               )
             }
           })
-          .getOrElse {
-            println("22222222222222222222222222222222222222222222222222222222222")
-            ClientIn.StepFailure
-          }
+          .getOrElse(ClientIn.StepFailure)
       } catch {
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.pos}", e)
@@ -249,8 +240,6 @@ object Chess {
   ): ClientIn.Node = {
     val movable = game.situation playable false
     val fen     = Forsyth.>>(game.board.variant.gameLogic, game)
-    println(s"game.board.variant.gameLogic: ${game.board.variant.gameLogic}")
-    println(s"fen out: ${fen}")
     ClientIn.Node(
       path = path,
       id = UciCharPair(game.board.variant.gameLogic, move.uci),
