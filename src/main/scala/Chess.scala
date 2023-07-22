@@ -38,7 +38,7 @@ object Chess {
           finalSquare = fullCaptureFields.isDefined,
           captures = fullCaptureFields,
           partialCaptures = req.fullCapture.getOrElse(false)
-        ).toOption flatMap { case (game, move) =>
+        ).toOption.flatMap { case (game, move) =>
           game.pgnMoves.lastOption.map { san =>
             {
               val movable = game.situation.playable(false)
@@ -101,7 +101,7 @@ object Chess {
               )
             }
           }
-        }.getOrElse(ClientIn.StepFailure)
+        } getOrElse ClientIn.StepFailure
       } catch {
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"${req.fen} ${req.variant} ${req.orig}${req.dest}", e)
