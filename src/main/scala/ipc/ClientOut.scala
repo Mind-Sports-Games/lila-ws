@@ -111,6 +111,10 @@ object ClientOut {
       blur: Boolean,
       lag: MoveMetrics,
       ackId: Option[Int]
+  ) extends ClientOutRound
+  case class RoundSelectSquaresOffer(
+      gf: GameFamily,
+      squares: String
   )                                              extends ClientOutRound
   case class RoundHold(mean: Int, sd: Int)       extends ClientOutRound
   case class RoundBerserk(ackId: Option[Int])    extends ClientOutRound
@@ -335,8 +339,16 @@ object ClientOut {
             case "bye2"         => Some(RoundBye)
             case "palantirPing" => Some(PalantirPing)
             case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "draw-yes" |
-                "draw-no" | "draw-claim" | "resign" | "resign-force" | "draw-force" | "abort" | "outoftime" =>
+                "draw-no" | "draw-claim" | "resign" | "resign-force" | "draw-force" | "abort" | "outoftime" |
+                "select-squares-accept" | "select-squares-decline" =>
               Some(RoundPlayerForward(o))
+            case "select-squares-offer" =>
+              for {
+                d <- o obj "d"
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                squares <- d str "s"
+              } yield RoundSelectSquaresOffer(variant.gameFamily, squares)
             // chat
             case "talk" => o str "d" map { ChatSay.apply }
             case "timeout" =>

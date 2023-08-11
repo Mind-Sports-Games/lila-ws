@@ -119,6 +119,10 @@ object LilaIn {
     def write = s"r/do $fullId ${Json.stringify(payload)}"
   }
 
+  case class RoundSelectSquaresOffer(fullId: Game.FullId, gf: GameFamily, squares: String) extends Round {
+    def write = s"r/select-squares $fullId ${gf.id} ${squares}"
+  }
+
   case class RoundMove(fullId: Game.FullId, gf: GameFamily, uci: Uci, blur: Boolean, lag: MoveMetrics)
       extends Round {
     private def centis(c: Option[Centis]) = optional(c.map(_.centis.toString))

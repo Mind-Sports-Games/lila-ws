@@ -125,6 +125,12 @@ object RoundClientActor {
             }
             Behaviors.same
 
+          case ClientOut.RoundSelectSquaresOffer(gf, squares) =>
+            fullId foreach { fid =>
+              lilaIn.round(LilaIn.RoundSelectSquaresOffer(fid, gf, squares))
+            }
+            Behaviors.same
+
           case ClientOut.RoundFlag(playerIndex) =>
             lilaIn.round(LilaIn.RoundFlag(gameId, playerIndex, state.player.map(_.id)))
             Behaviors.same
