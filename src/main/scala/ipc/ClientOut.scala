@@ -63,6 +63,14 @@ object ClientOut {
       payload: JsObject
   ) extends ClientOutSite
 
+  case class AnaPass(
+      fen: FEN,
+      path: Path,
+      variant: Variant,
+      chapterId: Option[ChapterId],
+      payload: JsObject
+  ) extends ClientOutSite
+
   case class AnaDests(
       fen: FEN,
       path: Path,
@@ -103,6 +111,10 @@ object ClientOut {
       blur: Boolean,
       lag: MoveMetrics,
       ackId: Option[Int]
+  ) extends ClientOutRound
+  case class RoundSelectSquaresOffer(
+      gf: GameFamily,
+      squares: String
   )                                              extends ClientOutRound
   case class RoundHold(mean: Int, sd: Int)       extends ClientOutRound
   case class RoundBerserk(ackId: Option[Int])    extends ClientOutRound
@@ -221,6 +233,21 @@ object ClientOut {
                 chapterId,
                 o
               )
+            case "anaPass" =>
+              for {
+                d <- o obj "d"
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                path <- d str "path"
+                fen  <- d str "fen"
+                chapterId = d str "ch" map ChapterId.apply
+              } yield AnaPass(
+                FEN(lib, fen),
+                Path(path),
+                variant,
+                chapterId,
+                o
+              )
             case "anaDests" =>
               for {
                 d    <- o obj "d"
@@ -281,6 +308,25 @@ object ClientOut {
                 blur  = d int "b" contains 1
                 ackId = d int "a"
               } yield RoundMove(variant.gameFamily, drop, blur, parseMetrics(d), ackId)
+            case "pass" =>
+              for {
+                d <- o obj "d"
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                pass <- Uci.Pass.apply(lib, variant.gameFamily)
+                blur  = d int "b" contains 1
+                ackId = d int "a"
+              } yield RoundMove(variant.gameFamily, pass, blur, parseMetrics(d), ackId)
+            case "selectSquares" =>
+              for {
+                d <- o obj "d"
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                squares <- (d str "s").map(_.split(",").flatMap(p => Pos.fromKey(lib, p)))
+                ss      <- Uci.SelectSquares.fromSquares(lib, variant.gameFamily, squares.toList)
+                blur  = d int "b" contains 1
+                ackId = d int "a"
+              } yield RoundMove(variant.gameFamily, ss, blur, parseMetrics(d), ackId)
             case "hold" =>
               for {
                 d    <- o obj "d"
@@ -293,8 +339,16 @@ object ClientOut {
             case "bye2"         => Some(RoundBye)
             case "palantirPing" => Some(PalantirPing)
             case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "draw-yes" |
-                "draw-no" | "draw-claim" | "resign" | "resign-force" | "draw-force" | "abort" | "outoftime" =>
+                "draw-no" | "draw-claim" | "resign" | "resign-force" | "draw-force" | "abort" | "outoftime" |
+                "select-squares-accept" | "select-squares-decline" =>
               Some(RoundPlayerForward(o))
+            case "select-squares-offer" =>
+              for {
+                d <- o obj "d"
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                squares <- d str "s"
+              } yield RoundSelectSquaresOffer(variant.gameFamily, squares)
             // chat
             case "talk" => o str "d" map { ChatSay.apply }
             case "timeout" =>
