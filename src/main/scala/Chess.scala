@@ -38,7 +38,8 @@ object Chess {
           captures = fullCaptureFields,
           partialCaptures = req.fullCapture.getOrElse(false)
         ).toOption flatMap { case (game, move) =>
-          game.pgnMoves.lastOption.map { san =>
+          //TODO multiaction dont use flatten here
+          game.actions.flatten.lastOption.map { san =>
             {
               val movable = game.situation.playable(false)
               val captLen = (game.situation, req.dest) match {
@@ -116,7 +117,8 @@ object Chess {
           req.variant.some,
           Some(req.fen)
         ).drop(req.role, req.pos).toOption flatMap { case (game, drop) =>
-          game.pgnMoves.lastOption map { san =>
+          //TODO multiaction dont use flatten here
+          game.actions.flatten.lastOption map { san =>
             makeNode(
               game,
               Uci.WithSan(req.variant.gameLogic, Uci(req.variant.gameLogic, drop), san),
@@ -231,7 +233,8 @@ object Chess {
     ClientIn.Node(
       path = path,
       id = UciCharPair(game.board.variant.gameLogic, move.uci),
-      ply = game.turns,
+      ply = game.plies,
+      turnCount = game.turnCount,
       move = move,
       fen = fen,
       check = game.situation.check,
@@ -240,7 +243,8 @@ object Chess {
       captureLength = captureLength,
       opening =
         if (
-          game.turns <= 30 && Variant
+          //TODO check if using turnCount over plies is consistent with other changes with openings
+          game.turnCount <= 30 && Variant
             .openingSensibleVariants(game.board.variant.gameLogic)(game.board.variant)
         )
           FullOpeningDB.findByFen(game.board.variant.gameLogic, fen)
