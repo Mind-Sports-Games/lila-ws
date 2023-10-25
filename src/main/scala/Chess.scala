@@ -39,7 +39,7 @@ object Chess {
           partialCaptures = req.fullCapture.getOrElse(false)
         ).toOption flatMap { case (game, move) =>
           //TODO multiaction dont use flatten here
-          game.actions.flatten.lastOption.map { san =>
+          game.actionStrs.flatten.lastOption.map { san =>
             {
               val movable = game.situation.playable(false)
               val captLen = (game.situation, req.dest) match {
@@ -118,7 +118,7 @@ object Chess {
           Some(req.fen)
         ).drop(req.role, req.pos).toOption flatMap { case (game, drop) =>
           //TODO multiaction dont use flatten here
-          game.actions.flatten.lastOption map { san =>
+          game.actionStrs.flatten.lastOption map { san =>
             makeNode(
               game,
               Uci.WithSan(req.variant.gameLogic, Uci(req.variant.gameLogic, drop), san),
