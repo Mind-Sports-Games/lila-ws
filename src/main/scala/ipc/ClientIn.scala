@@ -156,6 +156,7 @@ object ClientIn {
       path: Path,
       id: UciCharPair,
       ply: Int,
+      turnCount: Int,
       move: Uci.WithSan,
       fen: FEN,
       check: Boolean,
@@ -177,6 +178,8 @@ object ClientIn {
             "node" -> Json
               .obj(
                 "ply"         -> ply,
+                //TODO verify if this is actually being used and where receives this
+                "turnCount"   -> turnCount,
                 "fen"         -> fen,
                 "id"          -> id,
                 "uci"         -> move.uci,
