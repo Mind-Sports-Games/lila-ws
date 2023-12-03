@@ -169,8 +169,8 @@ case class RoundEventFlags(
 
 case class UserTv(value: User.ID) extends AnyVal with StringValue
 
-// TODO: byoyomi - Shogi removed this stuff, so we'll have to figure it out ourselves.
-case class Clock(p1: Int, p2: Int)
+// NOTE: byoyomi - Shogi removed this stuff, but we definitely need it.
+case class Clock(p1: Int, p2: Int, p1Pending: Int, p2Pending: Int, p1Delay: Int, p2Delay: Int)
 case class Position(lastUci: Uci, fen: FEN, clock: Option[Clock], turnPlayerIndex: PlayerIndex) {
   def fenWithPlayerIndex = s"$fen ${turnPlayerIndex.letter}"
 }

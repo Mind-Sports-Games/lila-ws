@@ -60,13 +60,17 @@ object Fens {
       (_, watched) => {
         val turnPlayerIndex = moveBy.fold(PlayerIndex.p1)(c => !c)
         (json.value match {
-          case MoveClockRegex(uciS, fenS, gf, wcS, bcS) => {
+          case MoveClockRegex(uciS, fenS, gf, wcS, bcS, wpcS, bpcS, wdcS, bdcS) => {
             val gfam = GameFamily(gf.toInt)
             for {
               uci <- Uci(gfam.gameLogic, gfam, uciS)
               p1  <- wcS.toIntOption
               p2  <- bcS.toIntOption
-            } yield Position(uci, FEN(gfam.gameLogic, fenS), Some(Clock(p1, p2)), turnPlayerIndex)
+              p1Pending  <- wpcS.toIntOption
+              p2Pending  <- bpcS.toIntOption
+              p1Delay  <- wdcS.toIntOption
+              p2Delay  <- bdcS.toIntOption
+            } yield Position(uci, FEN(gfam.gameLogic, fenS), Some(Clock(p1, p2, p1Pending, p2Pending, p1Delay, p2Delay)), turnPlayerIndex)
           }
           case MoveRegex(uciS, fenS, gf) => {
             val gfam = GameFamily(gf.toInt)
@@ -85,8 +89,9 @@ object Fens {
 
   // ...,"uci":"h2g2","san":"Rg2","fen":"r2qb1k1/p2nbrpn/6Np/3pPp1P/1ppP1P2/2P1B3/PP2B1R1/R2Q1NK1",...,"gf":0,...,"clock":{"p1":121.88,"p2":120.94}
   private val MoveRegex = """uci":"([^"]+)".+fen":"([^"]+).+gf":(\d+)""".r.unanchored
+  // [Yes, more wtf] {"fen":"rnbqkbnr/ppp1pppp/3p4/8/3PP3/8/PPP2PPP/RNBQKBNR b","lm":"d2d4","p1":610,"p2":610,"p1Pending":0,"p2Pending":0,"p1Delay":10,"p2Delay":10}
   private val MoveClockRegex =
-    """uci":"([^"]+)".+fen":"([^"]+).+gf":(\d+).+p1":(\d+).+p2":(\d+)""".r.unanchored
+    """uci":"([^"]+)".+fen":"([^"]+).+gf":(\d+).+p1":(\d+).+p2":(\d+).+p1Pending":(\d+).+p2Pending":(\d+).+p1Delay":(\d+).+p2Delay":(\d+)""".r.unanchored
 
   def size = games.size
 }
