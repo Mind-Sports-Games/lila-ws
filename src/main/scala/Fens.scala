@@ -63,14 +63,19 @@ object Fens {
           case MoveClockRegex(uciS, fenS, gf, wcS, bcS, wpcS, bpcS, wdcS, bdcS) => {
             val gfam = GameFamily(gf.toInt)
             for {
-              uci <- Uci(gfam.gameLogic, gfam, uciS)
-              p1  <- wcS.toIntOption
-              p2  <- bcS.toIntOption
-              p1Pending  <- wpcS.toIntOption
-              p2Pending  <- bpcS.toIntOption
-              p1Delay  <- wdcS.toIntOption
-              p2Delay  <- bdcS.toIntOption
-            } yield Position(uci, FEN(gfam.gameLogic, fenS), Some(Clock(p1, p2, p1Pending, p2Pending, p1Delay, p2Delay)), turnPlayerIndex)
+              uci       <- Uci(gfam.gameLogic, gfam, uciS)
+              p1        <- wcS.toIntOption
+              p2        <- bcS.toIntOption
+              p1Pending <- wpcS.toIntOption
+              p2Pending <- bpcS.toIntOption
+              p1Delay   <- wdcS.toIntOption
+              p2Delay   <- bdcS.toIntOption
+            } yield Position(
+              uci,
+              FEN(gfam.gameLogic, fenS),
+              Some(Clock(p1, p2, p1Pending, p2Pending, p1Delay, p2Delay)),
+              turnPlayerIndex
+            )
           }
           case MoveRegex(uciS, fenS, gf) => {
             val gfam = GameFamily(gf.toInt)
