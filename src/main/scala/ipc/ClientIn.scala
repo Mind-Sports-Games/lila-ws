@@ -67,6 +67,10 @@ object ClientIn {
           )
           .add("p1" -> position.clock.map(_.p1))
           .add("p2" -> position.clock.map(_.p2))
+          .add("p1Pending" -> position.clock.map(_.p1Pending))
+          .add("p2Pending" -> position.clock.map(_.p2Pending))
+          .add("p1Delay" -> position.clock.map(_.p1Delay))
+          .add("p2Delay" -> position.clock.map(_.p2Delay))
       )
   }
 
@@ -177,7 +181,7 @@ object ClientIn {
             "path" -> path,
             "node" -> Json
               .obj(
-                "ply"         -> ply,
+                "ply" -> ply,
                 //TODO verify if this is actually being used and where receives this
                 "turnCount"   -> turnCount,
                 "fen"         -> fen,
