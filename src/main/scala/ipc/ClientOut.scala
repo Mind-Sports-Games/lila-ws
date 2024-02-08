@@ -308,6 +308,25 @@ object ClientOut {
                 blur  = d int "b" contains 1
                 ackId = d int "a"
               } yield RoundMove(variant.gameFamily, drop, blur, parseMetrics(d), ackId)
+            case "lift" =>
+              for {
+                d <- o obj "d"
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                pos  <- d str "pos"
+                lift <- Uci.Lift.fromStrings(lib, variant.gameFamily, pos)
+                blur  = d int "b" contains 1
+                ackId = d int "a"
+              } yield RoundMove(variant.gameFamily, lift, blur, parseMetrics(d), ackId)
+            case "endturn" =>
+              for {
+                d <- o obj "d"
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                endTurn <- Uci.EndTurn.apply(lib, variant.gameFamily)
+                blur  = d int "b" contains 1
+                ackId = d int "a"
+              } yield RoundMove(variant.gameFamily, endTurn, blur, parseMetrics(d), ackId)
             case "pass" =>
               for {
                 d <- o obj "d"
