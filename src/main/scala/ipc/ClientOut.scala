@@ -366,9 +366,9 @@ object ClientOut {
             case "flag"         => o str "d" flatMap PlayerIndex.fromName map RoundFlag.apply
             case "bye2"         => Some(RoundBye)
             case "palantirPing" => Some(PalantirPing)
-            case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "draw-yes" |
-                "draw-no" | "draw-claim" | "resign" | "resign-force" | "draw-force" | "abort" | "outoftime" |
-                "select-squares-accept" | "select-squares-decline" =>
+            case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "undo" |
+                "draw-yes" | "draw-no" | "draw-claim" | "resign" | "resign-force" | "draw-force" | "abort" |
+                "outoftime" | "select-squares-accept" | "select-squares-decline" =>
               Some(RoundPlayerForward(o))
             case "select-squares-offer" =>
               for {
