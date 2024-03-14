@@ -317,6 +317,25 @@ object ClientOut {
                 blur  = d int "b" contains 1
                 ackId = d int "a"
               } yield RoundMove(variant.gameFamily, drop, blur, parseMetrics(d), ackId)
+            case "lift" =>
+              for {
+                d <- o obj "d"
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                pos  <- d str "pos"
+                lift <- Uci.Lift.fromStrings(lib, variant.gameFamily, pos)
+                blur  = d int "b" contains 1
+                ackId = d int "a"
+              } yield RoundMove(variant.gameFamily, lift, blur, parseMetrics(d), ackId)
+            case "endturn" =>
+              for {
+                d <- o obj "d"
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                endTurn <- Uci.EndTurn.apply(lib, variant.gameFamily)
+                blur  = d int "b" contains 1
+                ackId = d int "a"
+              } yield RoundMove(variant.gameFamily, endTurn, blur, parseMetrics(d), ackId)
             case "pass" =>
               for {
                 d <- o obj "d"
@@ -326,6 +345,15 @@ object ClientOut {
                 blur  = d int "b" contains 1
                 ackId = d int "a"
               } yield RoundMove(variant.gameFamily, pass, blur, parseMetrics(d), ackId)
+            case "diceroll" =>
+              for {
+                d <- o obj "d"
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                diceroll <- Uci.DoRoll.apply(lib)
+                blur  = d int "b" contains 1
+                ackId = d int "a"
+              } yield RoundMove(variant.gameFamily, diceroll, blur, parseMetrics(d), ackId)
             case "selectSquares" =>
               for {
                 d <- o obj "d"
@@ -347,9 +375,9 @@ object ClientOut {
             case "flag"         => o str "d" flatMap PlayerIndex.fromName map RoundFlag.apply
             case "bye2"         => Some(RoundBye)
             case "palantirPing" => Some(PalantirPing)
-            case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "draw-yes" |
-                "draw-no" | "draw-claim" | "resign" | "resign-force" | "draw-force" | "abort" | "outoftime" |
-                "select-squares-accept" | "select-squares-decline" =>
+            case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "undo" |
+                "draw-yes" | "draw-no" | "draw-claim" | "resign" | "resign-force" | "draw-force" | "abort" |
+                "outoftime" | "select-squares-accept" | "select-squares-decline" =>
               Some(RoundPlayerForward(o))
             case "select-squares-offer" =>
               for {
