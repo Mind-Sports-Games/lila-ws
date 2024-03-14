@@ -1,11 +1,12 @@
 package lila.ws
 
 import scala.collection.MapView
+import scala.util.chaining._
 
 import play.api.libs.json._
 import strategygames.format.{ FEN, Forsyth, Uci, UciCharPair }
 import strategygames.opening.{ FullOpening, FullOpeningDB }
-import strategygames.{ Game, GameLogic, Pocket, PocketData, Pos, Role, Situation }
+import strategygames.{ Game, GameLogic, MoveMetrics, Pocket, PocketData, Pos, Role, Situation }
 import strategygames.variant.Variant
 import strategygames.draughts
 import com.typesafe.scalalogging.Logger
@@ -37,7 +38,7 @@ object Chess {
           finalSquare = fullCaptureFields.isDefined,
           captures = fullCaptureFields,
           partialCaptures = req.fullCapture.getOrElse(false)
-        ).toOption flatMap { case (game, move) =>
+        ).toOption.flatMap { case (game, move) =>
           //Get the san of the last action
           game.actionStrs.flatten.lastOption.map { san =>
             {
@@ -112,22 +113,33 @@ object Chess {
   def apply(req: ClientOut.AnaDrop): ClientIn =
     Monitor.time(_.chessMoveTime) {
       try {
-        Game(
+        val baseGame = Game(
           req.variant.gameLogic,
           req.variant.some,
           Some(req.fen)
-        ).drop(req.role, req.pos).toOption flatMap { case (game, drop) =>
-          //Get the san of the last action
-          game.actionStrs.flatten.lastOption map { san =>
-            makeNode(
-              game,
-              Uci.WithSan(req.variant.gameLogic, Uci(req.variant.gameLogic, drop), san),
-              req.path,
-              req.chapterId,
-              if (game.situation.playable(false)) game.situation.destinations else Map.empty
-            )
-          }
-        } getOrElse ClientIn.StepFailure
+        )
+        val g: Game = req.halfMove
+          .flatMap(m => {
+            Uci(req.variant, s"${m.orig}${m.dest}")
+          })
+          .flatMap(u => baseGame.applyUci(u, MoveMetrics()).toOption)
+          .map(_._1)
+          .getOrElse(baseGame)
+        g.drop(req.role, req.pos)
+          .toOption
+          .flatMap({ case (game, drop) =>
+            //Get the san of the last action
+            game.actionStrs.flatten.lastOption map { san =>
+              makeNode(
+                game,
+                Uci.WithSan(req.variant.gameLogic, Uci(req.variant.gameLogic, drop), san),
+                req.path,
+                req.chapterId,
+                if (game.situation.playable(false)) game.situation.destinations else Map.empty
+              )
+            }
+          })
+          .getOrElse(ClientIn.StepFailure)
       } catch {
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.pos}", e)
