@@ -265,6 +265,8 @@ object Chess {
       dropsByRole = game.situation match {
         case (Situation.FairySF(_)) =>
           game.situation.dropsByRole
+        case (Situation.Go(_)) =>
+          game.situation.dropsByRole
         case _ => None
       },
       pocketData = game.situation.board.pocketData,
