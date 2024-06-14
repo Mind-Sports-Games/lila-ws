@@ -6,7 +6,7 @@ import scala.util.chaining._
 import play.api.libs.json._
 import strategygames.format.{ FEN, Forsyth, Uci, UciCharPair }
 import strategygames.opening.{ FullOpening, FullOpeningDB }
-import strategygames.{ Game, GameFamily, GameLogic, MoveMetrics, Pocket, PocketData, Pos, Role, Situation }
+import strategygames.{ Game, GameLogic, MoveMetrics, Pocket, PocketData, Pos, Role, Situation }
 import strategygames.variant.Variant
 import strategygames.draughts
 import com.typesafe.scalalogging.Logger
@@ -290,8 +290,7 @@ object Chess {
 
   private def isSgf(variant: Variant): Boolean = {
     variant.gameLogic == GameLogic.FairySF() || variant.gameLogic == GameLogic
-      .Go() || variant.gameLogic == GameLogic
-      .Backgammon() || (variant.gameFamily == GameFamily.LinesOfAction())
+      .Go() || variant.gameLogic == GameLogic.Backgammon()
   }
 
   //TODO: push this into strategygames. So much copy/paste from lila.socket.AnaDests
