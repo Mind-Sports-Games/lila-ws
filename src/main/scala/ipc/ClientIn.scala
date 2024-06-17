@@ -182,7 +182,7 @@ object ClientIn {
             "node" -> Json
               .obj(
                 "ply" -> ply,
-                //TODO verify if this is actually being used and where receives this
+                //This is used within analysis actions
                 "turnCount"   -> turnCount,
                 "fen"         -> fen,
                 "id"          -> id,

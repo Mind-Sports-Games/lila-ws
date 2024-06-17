@@ -39,9 +39,13 @@ object Chess {
           captures = fullCaptureFields,
           partialCaptures = req.fullCapture.getOrElse(false)
         ).toOption.flatMap { case (game, move) =>
-          //Get the san of the last action
-          game.actionStrs.flatten.lastOption.map { san =>
+          //Get the game record notation (san/sgf) of the last action
+          game.actionStrs.flatten.lastOption.map { lastAction =>
             {
+              val gameRecordNotation =
+                if (isSgf(req.variant))
+                  strategygames.format.sgf.Dumper(req.variant, Vector(Vector(lastAction)))
+                else lastAction
               val movable = game.situation.playable(false)
               val captLen = (game.situation, req.dest) match {
                 case (Situation.Draughts(sit), Pos.Draughts(dest)) =>
@@ -75,7 +79,7 @@ object Chess {
                       case _                    => false
                     }
                   ),
-                  san
+                  gameRecordNotation
                 ),
                 req.path,
                 req.chapterId,
@@ -128,15 +132,25 @@ object Chess {
         g.drop(req.role, req.pos)
           .toOption
           .flatMap({ case (game, drop) =>
-            //Get the san of the last action
-            game.actionStrs.flatten.lastOption map { san =>
-              makeNode(
-                game,
-                Uci.WithSan(req.variant.gameLogic, Uci(req.variant.gameLogic, drop), san),
-                req.path,
-                req.chapterId,
-                if (game.situation.playable(false)) game.situation.destinations else Map.empty
-              )
+            //Get the game record notation (san/sgf) of the last action
+            game.actionStrs.flatten.lastOption map { lastAction =>
+              {
+                val gameRecordNotation =
+                  if (isSgf(req.variant))
+                    strategygames.format.sgf.Dumper(req.variant, Vector(Vector(lastAction)))
+                  else lastAction
+                makeNode(
+                  game,
+                  Uci.WithSan(
+                    req.variant.gameLogic,
+                    Uci(req.variant.gameLogic, drop),
+                    gameRecordNotation
+                  ),
+                  req.path,
+                  req.chapterId,
+                  if (game.situation.playable(false)) game.situation.destinations else Map.empty
+                )
+              }
             }
           })
           .getOrElse(ClientIn.StepFailure)
@@ -272,6 +286,11 @@ object Chess {
       pocketData = game.situation.board.pocketData,
       chapterId = chapterId
     )
+  }
+
+  private def isSgf(variant: Variant): Boolean = {
+    variant.gameLogic == GameLogic.FairySF() || variant.gameLogic == GameLogic
+      .Go() || variant.gameLogic == GameLogic.Backgammon()
   }
 
   //TODO: push this into strategygames. So much copy/paste from lila.socket.AnaDests
