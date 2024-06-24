@@ -26,7 +26,7 @@ jobs:
             ~/.ivy2/cache
           key: ${{ runner.os }}-sbt-${{ hashFiles('**/project/build.properties') }}-${{ hashFiles('**/build.sbt') }}-${{ hashFiles('**/project/Dependencies.scala') }}
       - uses: actions/setup-java@v4
-         with:
+        with:
           distribution: temurin
           java-version: 17.0.5
       - run: sbt -Depoll=true "test;stage"
