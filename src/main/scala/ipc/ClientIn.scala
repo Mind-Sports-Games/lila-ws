@@ -160,6 +160,7 @@ object ClientIn {
       path: Path,
       id: UciCharPair,
       ply: Int,
+      playerIndex: PlayerIndex,
       turnCount: Int,
       move: Uci.WithSan,
       fen: FEN,
@@ -181,8 +182,9 @@ object ClientIn {
             "path" -> path,
             "node" -> Json
               .obj(
-                "ply" -> ply,
-                //This is used within analysis actions
+                "ply"         -> ply,
+                "playerIndex" -> playerIndex.name,
+                //TODO verify if this is actually being used and where receives this
                 "turnCount"   -> turnCount,
                 "fen"         -> fen,
                 "id"          -> id,

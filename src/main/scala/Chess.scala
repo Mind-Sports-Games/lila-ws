@@ -260,6 +260,7 @@ object Chess {
       path = path,
       id = UciCharPair(game.board.variant.gameLogic, move.uci),
       ply = game.plies,
+      playerIndex = game.player,
       turnCount = game.turnCount,
       move = move,
       fen = fen,
