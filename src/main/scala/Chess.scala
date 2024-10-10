@@ -262,6 +262,7 @@ object Chess {
       ply = game.plies,
       playerIndex = game.player,
       turnCount = game.turnCount,
+      playedPlayerIndex = if (game.board.history.currentTurn.nonEmpty) game.player else !game.player,
       move = move,
       fen = fen,
       check = game.situation.check,
