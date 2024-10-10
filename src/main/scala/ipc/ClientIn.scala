@@ -160,7 +160,9 @@ object ClientIn {
       path: Path,
       id: UciCharPair,
       ply: Int,
+      playerIndex: PlayerIndex,
       turnCount: Int,
+      playedPlayerIndex: PlayerIndex,
       move: Uci.WithSan,
       fen: FEN,
       check: Boolean,
@@ -181,17 +183,18 @@ object ClientIn {
             "path" -> path,
             "node" -> Json
               .obj(
-                "ply" -> ply,
-                //This is used within analysis actions
-                "turnCount"   -> turnCount,
-                "fen"         -> fen,
-                "id"          -> id,
-                "uci"         -> move.uci,
-                "san"         -> move.san,
-                "dests"       -> dests,
-                "destsUci"    -> destsUci,
-                "children"    -> JsArray(),
-                "dropsByRole" -> DropsByRole.json(dropsByRole.getOrElse(Map.empty))
+                "ply"               -> ply,
+                "playerIndex"       -> playerIndex.name,
+                "turnCount"         -> turnCount,
+                "playedPlayerIndex" -> playedPlayerIndex.name,
+                "fen"               -> fen,
+                "id"                -> id,
+                "uci"               -> move.uci,
+                "san"               -> move.san,
+                "dests"             -> dests,
+                "destsUci"          -> destsUci,
+                "children"          -> JsArray(),
+                "dropsByRole"       -> DropsByRole.json(dropsByRole.getOrElse(Map.empty))
               )
               .add("opening" -> opening)
               .add("captLen" -> captureLength)
