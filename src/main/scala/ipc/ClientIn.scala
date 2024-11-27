@@ -225,7 +225,7 @@ object ClientIn {
           )
           .add("opening" -> opening)
           .add("ch" -> chapterId)
-          .add("destsUci", destsUci)
+          .add("destsUci" -> destsUci)
       )
   }
 

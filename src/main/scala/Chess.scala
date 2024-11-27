@@ -1,7 +1,6 @@
 package lila.ws
 
 import scala.collection.MapView
-import scala.util.chaining._
 
 import play.api.libs.json._
 import strategygames.format.{ FEN, Forsyth, Uci, UciCharPair }
@@ -348,7 +347,7 @@ object Chess {
           }
         }
     }
-    (if (truncated) truncateUcis(truncatedMoves) else truncatedMoves) mapValues { _ map { _._2 } }
+    (if (truncated) truncateUcis(truncatedMoves) else truncatedMoves).view.mapValues { _ map { _._2 } }
   }
 
   //draughts
