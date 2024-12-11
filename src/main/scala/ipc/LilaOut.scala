@@ -85,15 +85,20 @@ object LilaOut {
       flags: RoundEventFlags,
       tpe: String,
       data: JsonString
-  )                                                                                         extends RoundOut
-  case class RoundTourStanding(tourId: Tour.ID, data: JsonString)                           extends RoundOut
-  case class RoundResyncPlayer(fullId: Game.FullId)                                         extends RoundOut
-  case class RoundGone(fullId: Game.FullId, v: Boolean)                                     extends RoundOut
-  case class RoundGoneIn(fullId: Game.FullId, seconds: Int)                                 extends RoundOut
-  case class RoundBotOnline(gameId: Game.Id, playerIndex: PlayerIndex, v: Boolean)          extends RoundOut
-  case class GameStart(users: List[User.ID])                                                extends RoundOut
-  case class GameFinish(gameId: Game.Id, winner: Option[PlayerIndex], users: List[User.ID]) extends RoundOut
-  case class TvSelect(gameId: Game.Id, speed: Speed, json: JsonString)                      extends RoundOut
+  )                                                                                extends RoundOut
+  case class RoundTourStanding(tourId: Tour.ID, data: JsonString)                  extends RoundOut
+  case class RoundResyncPlayer(fullId: Game.FullId)                                extends RoundOut
+  case class RoundGone(fullId: Game.FullId, v: Boolean)                            extends RoundOut
+  case class RoundGoneIn(fullId: Game.FullId, seconds: Int)                        extends RoundOut
+  case class RoundBotOnline(gameId: Game.Id, playerIndex: PlayerIndex, v: Boolean) extends RoundOut
+  case class GameStart(users: List[User.ID])                                       extends RoundOut
+  case class GameFinish(
+      gameId: Game.Id,
+      winner: Option[PlayerIndex],
+      playerScores: List[String],
+      users: List[User.ID]
+  )                                                                    extends RoundOut
+  case class TvSelect(gameId: Game.Id, speed: Speed, json: JsonString) extends RoundOut
 
   // racer
 
@@ -289,8 +294,15 @@ object LilaOut {
 
       case "r/start" => Some(GameStart(commas(args).toList))
       case "r/finish" =>
-        get(args, 3) { case Array(gameId, winner, users) =>
-          Some(GameFinish(Game.Id(gameId), readOptionalPlayerIndex(winner), commas(users).toList))
+        get(args, 4) { case Array(gameId, winner, playerScores, users) =>
+          Some(
+            GameFinish(
+              Game.Id(gameId),
+              readOptionalPlayerIndex(winner),
+              commas(playerScores).toList,
+              commas(users).toList
+            )
+          )
         }
 
       // tv

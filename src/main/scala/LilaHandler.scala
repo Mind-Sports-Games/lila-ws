@@ -147,9 +147,9 @@ final class LilaHandler(
           friendList.startPlaying(u)
           publish(_ userTv u, ClientIn.Resync)
         }
-      case GameFinish(gameId, winner, users) =>
+      case GameFinish(gameId, winner, playerScores, users) =>
         users foreach friendList.stopPlaying
-        Fens.finish(gameId, winner)
+        Fens.finish(gameId, winner, playerScores)
       case Pong(pingAt) => Monitor.ping.record("round", pingAt)
       case LilaBoot =>
         logger.info("#################### LILA BOOT ####################")
