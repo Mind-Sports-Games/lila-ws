@@ -63,7 +63,7 @@ object ClientIn {
           .obj(
             "id"  -> gameId.value,
             "lm"  -> position.lastUci,
-            "fen" -> position.fenWithPlayerIndex
+            "fen" -> position.fen.value
           )
           .add("p1" -> position.clock.map(_.p1))
           .add("p2" -> position.clock.map(_.p2))
