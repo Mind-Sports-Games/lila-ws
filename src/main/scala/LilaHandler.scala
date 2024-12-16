@@ -127,7 +127,10 @@ final class LilaHandler(
         val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
         History.round.add(gameId, versioned)
         publish(_ room gameId, versioned)
-        if (tpe == "move" || tpe == "drop") Fens.move(gameId, data, flags.moveBy)
+        if (
+          List("move", "drop", "lift", "undo", "endturn", "pass", "diceroll", "selectSquares").contains(tpe)
+        )
+          Fens.move(gameId, data, flags.moveBy)
       case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
       case RoundResyncPlayer(fullId) =>
         publish(_ room RoomId(fullId.gameId), ClientIn.RoundResyncPlayer(fullId.playerId))
@@ -147,9 +150,9 @@ final class LilaHandler(
           friendList.startPlaying(u)
           publish(_ userTv u, ClientIn.Resync)
         }
-      case GameFinish(gameId, winner, users) =>
+      case GameFinish(gameId, winner, playerScores, users) =>
         users foreach friendList.stopPlaying
-        Fens.finish(gameId, winner)
+        Fens.finish(gameId, winner, playerScores)
       case Pong(pingAt) => Monitor.ping.record("round", pingAt)
       case LilaBoot =>
         logger.info("#################### LILA BOOT ####################")

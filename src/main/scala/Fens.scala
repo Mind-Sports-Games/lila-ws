@@ -44,11 +44,11 @@ object Fens {
     }
 
   // a game finishes
-  def finish(gameId: Game.Id, winner: Option[PlayerIndex]) =
+  def finish(gameId: Game.Id, winner: Option[PlayerIndex], playerScores: List[String]) =
     games.computeIfPresent(
       gameId,
       (_, watched) => {
-        watched.clients foreach { _ ! ClientIn.Finish(gameId, winner) }
+        watched.clients foreach { _ ! ClientIn.Finish(gameId, winner, playerScores) }
         null
       }
     )

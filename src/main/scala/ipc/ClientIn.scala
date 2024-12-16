@@ -63,7 +63,7 @@ object ClientIn {
           .obj(
             "id"  -> gameId.value,
             "lm"  -> position.lastUci,
-            "fen" -> position.fenWithPlayerIndex
+            "fen" -> position.fen.value
           )
           .add("p1" -> position.clock.map(_.p1))
           .add("p2" -> position.clock.map(_.p2))
@@ -74,8 +74,17 @@ object ClientIn {
       )
   }
 
-  case class Finish(gameId: Game.Id, winner: Option[PlayerIndex]) extends ClientIn {
-    def write = cliMsg("finish", Json.obj("id" -> gameId.value, "win" -> winner.map(_.letter.toString)))
+  case class Finish(gameId: Game.Id, winner: Option[PlayerIndex], playerScores: List[String])
+      extends ClientIn {
+    def write = cliMsg(
+      "finish",
+      Json.obj(
+        "id"      -> gameId.value,
+        "win"     -> winner.map(_.letter.toString),
+        "p1Score" -> playerScores.headOption,
+        "p2Score" -> playerScores.lift(1)
+      )
+    )
   }
 
   case class Mlat(millis: Double) extends ClientIn {
