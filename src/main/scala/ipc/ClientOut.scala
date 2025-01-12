@@ -363,6 +363,16 @@ object ClientOut {
                 blur  = d int "b" contains 1
                 ackId = d int "a"
               } yield RoundMove(variant.gameFamily, diceroll, blur, parseMetrics(d), ackId)
+            case "cubeaction" =>
+              for {
+                d <- o obj "d"
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                interaction <- d str "interaction"
+                cubeaction  <- Uci.CubeAction.fromStrings(lib, interaction)
+                blur  = d int "b" contains 1
+                ackId = d int "a"
+              } yield RoundMove(variant.gameFamily, cubeaction, blur, parseMetrics(d), ackId)
             case "selectSquares" =>
               for {
                 d <- o obj "d"
