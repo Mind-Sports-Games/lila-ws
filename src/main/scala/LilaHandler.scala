@@ -128,7 +128,7 @@ final class LilaHandler(
         History.round.add(gameId, versioned)
         publish(_ room gameId, versioned)
         if (
-          List("move", "drop", "lift", "undo", "endturn", "pass", "diceroll", "selectSquares").contains(tpe)
+          List("move", "drop", "lift", "undo", "endturn", "pass", "diceroll", "cubeaction", "selectSquares").contains(tpe)
         )
           Fens.move(gameId, data, flags.moveBy)
       case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
