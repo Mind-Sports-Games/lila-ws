@@ -395,8 +395,8 @@ object ClientOut {
             case "bye2"         => Some(RoundBye)
             case "palantirPing" => Some(PalantirPing)
             case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "draw-yes" |
-                "draw-no" | "draw-claim" | "resign" | "resign-force" | "draw-force" | "abort" | "outoftime" |
-                "select-squares-accept" | "select-squares-decline" =>
+                "draw-no" | "draw-claim" | "resign" | "resign-force" | "resign-match" | "draw-force" |
+                "abort" | "outoftime" | "select-squares-accept" | "select-squares-decline" =>
               Some(RoundPlayerForward(o))
             case "select-squares-offer" =>
               for {
