@@ -3,8 +3,11 @@ name: Test
 on: [push, pull_request]
 
 jobs:
-  openjdk13:
-    runs-on: ubuntu-22.04
+  openjdk17:
+    runs-on: ubuntu-24.04
+    env:
+      JAVA_OPTS: "-Xmx20g"
+      SBT_OPTS: "-Dsbt.ci=true"
     steps:
       - name: Check if organization member
         id: check_org_member
@@ -24,4 +27,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 17.0.5
+          cache: sbt
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
       - run: sbt compile
