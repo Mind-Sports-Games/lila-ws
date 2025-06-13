@@ -15,8 +15,11 @@ on:
       - '.sbtopts.default'
 
 jobs:
-  openjdk14:
-    runs-on: ubuntu-22.04
+  openjdk17:
+    runs-on: ubuntu-24.04
+    env:
+      JAVA_OPTS: "-Xmx20g"
+      SBT_OPTS: "-Dsbt.ci=true"
     steps:
       - name: Check if organization member
         id: check_org_member
@@ -42,6 +45,9 @@ jobs:
         with:
           distribution: temurin
           java-version: 17.0.5
+          cache: sbt
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
       - run: sbt -Depoll=true "test;stage"
       - run: cp LICENSE README.md target/universal/stage && git log -n 1 --pretty=oneline > target/universal/stage/commit.txt
       - run: cd target/universal/stage && tar -cvpJf ../../../lila-ws-3.0.tar.xz . && cd -
