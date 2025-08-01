@@ -71,5 +71,5 @@ jobs:
       - name: Notify
         run: curl
           --request POST
-          --data-urlencode "content=Deployed lila-ws branch `${{ github.ref }}` to Dev"
+          --data-urlencode "content=Deployed lila-ws branch ${GITHUB_REF##*/} to Dev"
           $WEBHOOK_URL
