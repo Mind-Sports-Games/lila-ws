@@ -69,7 +69,7 @@ jobs:
     if: ${{ needs.openjdk17.result == 'success' }}
     steps:
       - name: Notify
-        run: curl
-          --request POST
-          --data-urlencode "content=:white_check_mark: **lila-ws** branch <https://github.com/Mind-Sports-Games/lila-ws/tree/${GITHUB_REF##*/}> is on <https://playstrategy.dev>"
-          $WEBHOOK_URL
+        run: |
+          curl --request POST \
+            --data-urlencode "content=:white_check_mark: **lila-ws** branch <https://github.com/Mind-Sports-Games/lila-ws/tree/${GITHUB_REF##*/}> is on <https://playstrategy.dev>" \
+            $WEBHOOK_URL
