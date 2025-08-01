@@ -71,5 +71,5 @@ jobs:
       - name: Notify
         run: curl
           --request POST
-          --data-urlencode "content=Deployed lila-ws branch ${GITHUB_REF##*/} to Dev"
+          --data-urlencode "content=:white_check_mark: **lila-ws** branch <https://github.com/Mind-Sports-Games/lila-ws/tree/${GITHUB_REF##*/}> is on <https://playstrategy.dev>"
           $WEBHOOK_URL
