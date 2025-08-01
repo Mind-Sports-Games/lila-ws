@@ -61,3 +61,15 @@ jobs:
           host: ${{ secrets.PSD_MAIN_HOST }}
           username: ${{ secrets.PSD_MAIN_USERNAME }}
           privateKey: ${{ secrets.MSO_CI_SSH_KEY }}
+  notify:
+    runs-on: ubuntu-24.04
+    env:
+      WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL_DEPLOY_DEV }}
+    needs: openjdk17
+    if: ${{ needs.openjdk17.result == 'success' }}
+    steps:
+      - name: Notify
+        run: curl
+          --request POST
+          --data-urlencode "content=Deployed lila-ws branch `${{ github.ref }}` to Dev"
+          $WEBHOOK_URL
