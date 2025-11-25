@@ -30,7 +30,7 @@ object Chess {
               )
             )
             .flatMap(_.capture)
-        Game(req.pp("req").variant.gameLogic, req.variant.some, Some(req.fen))(
+        Game(req.pp("reqm").variant.gameLogic, req.variant.some, Some(req.fen))(
           orig = req.orig,
           dest = req.dest,
           promotion = req.promotion,
@@ -117,7 +117,7 @@ object Chess {
     Monitor.time(_.chessMoveTime) {
       try {
         val baseGame = Game(
-          req.variant.gameLogic,
+          req.pp("dreq").variant.gameLogic,
           req.variant.some,
           Some(req.fen)
         )
@@ -162,7 +162,7 @@ object Chess {
 
   def apply(req: ClientOut.AnaDests): ClientIn.Dests =
     Monitor.time(_.chessDestTime) {
-      val sit = Game(req.variant.gameLogic, req.variant.some, Some(req.fen)).situation
+      val sit = Game(req.pp("reqd").variant.gameLogic, req.variant.some, Some(req.fen)).situation
       val isInitial = (req.variant.standardVariant) &&
         req.fen == Forsyth.initial(req.variant.gameLogic) &&
         req.path.value.isEmpty
@@ -240,7 +240,7 @@ object Chess {
     }
 
   def apply(req: ClientOut.Opening): Option[ClientIn.Opening] =
-    if (Variant.openingSensibleVariants(req.variant.gameLogic)(req.variant))
+    if (Variant.openingSensibleVariants(req.pp("reqo").variant.gameLogic)(req.variant))
       FullOpeningDB.findByFen(req.variant.gameLogic, req.fen) map { ClientIn.Opening(req.path, _) }
     else None
 
