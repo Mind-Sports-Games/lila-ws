@@ -30,7 +30,7 @@ object Chess {
               )
             )
             .flatMap(_.capture)
-        Game(req.variant.gameLogic, req.variant.some, Some(req.fen))(
+        Game(req.pp("req").variant.gameLogic, req.variant.some, Some(req.fen))(
           orig = req.orig,
           dest = req.dest,
           promotion = req.promotion,
