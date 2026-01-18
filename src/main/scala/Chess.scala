@@ -91,7 +91,7 @@ object Chess {
                       truncatedDests
                         .getOrElse(validMoves.view.mapValues { _ map (_.dest) })
                         .to(Map)
-                        .map { case (p, m) => (Pos.Draughts(p), m.map(Pos.Draughts)) }
+                        .map { case (p, m) => (Pos.Draughts(p), m.map(Pos.Draughts.apply)) }
                     if (movable) draughtsDests else Map.empty
                   }
                   case _ => if (movable) game.situation.destinations else Map.empty
@@ -194,7 +194,7 @@ object Chess {
                   truncatedDests
                     .getOrElse(validMoves.view.mapValues { _ map (_.dest) })
                     .to(Map)
-                    .map { case (p, lp) => (Pos.Draughts(p), lp.map(Pos.Draughts)) }
+                    .map { case (p, lp) => (Pos.Draughts(p), lp.map(Pos.Draughts.apply)) }
                 val destStr = json.destString(destsToConvert)
                 if (captureLength > 0) s"#$captureLength $destStr"
                 else destStr
@@ -253,7 +253,7 @@ object Chess {
       destsUci: Option[List[String]] = None,
       captureLength: Option[Int] = None
   ): ClientIn.Node = {
-    val movable = game.situation playable false
+    val movable = game.situation.playable(false)
     val fen     = Forsyth.>>(game.board.variant.gameLogic, game)
     ClientIn.Node(
       path = path,
@@ -381,13 +381,13 @@ object Chess {
   }
 
   object json {
-    implicit val fenWrite         = Writes[FEN] { fen => JsString(fen.value) }
-    implicit val pathWrite        = Writes[Path] { path => JsString(path.value) }
-    implicit val uciWrite         = Writes[Uci] { uci => JsString(uci.uci) }
-    implicit val uciCharPairWrite = Writes[UciCharPair] { ucp => JsString(ucp.toString) }
-    implicit val posWrite         = Writes[Pos] { pos => JsString(pos.key) }
-    implicit val chapterIdWrite   = Writes[ChapterId] { ch => JsString(ch.value) }
-    implicit val openingWrite = Writes[FullOpening] { o =>
+    implicit val fenWrite: Writes[FEN]                   = Writes[FEN] { fen => JsString(fen.value) }
+    implicit val pathWrite: Writes[Path]                 = Writes[Path] { path => JsString(path.value) }
+    implicit val uciWrite: Writes[Uci]                   = Writes[Uci] { uci => JsString(uci.uci) }
+    implicit val uciCharPairWrite: Writes[UciCharPair]   = Writes[UciCharPair] { ucp => JsString(ucp.toString) }
+    implicit val posWrite: Writes[Pos]                   = Writes[Pos] { pos => JsString(pos.key) }
+    implicit val chapterIdWrite: Writes[ChapterId]       = Writes[ChapterId] { ch => JsString(ch.value) }
+    implicit val openingWrite: Writes[FullOpening] = Writes[FullOpening] { o =>
       Json.obj(
         "eco"  -> o.eco,
         "name" -> o.name
@@ -401,9 +401,9 @@ object Chess {
       var first = true
       dests foreach { case (orig, dests) =>
         if (first) first = false
-        else sb append " "
-        sb append orig.piotr
-        dests foreach { sb append _.piotr }
+        else sb.append(" ")
+        sb.append(orig.piotr)
+        dests foreach { d => sb.append(d.piotr) }
       }
       sb.toString
     }

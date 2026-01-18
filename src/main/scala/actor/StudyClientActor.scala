@@ -44,7 +44,7 @@ object StudyClientActor {
           case ClientCtrl.Broom(oldSeconds) =>
             if (state.site.lastPing < oldSeconds) Behaviors.stopped
             else {
-              keepAlive study state.room.id
+              keepAlive.study(state.room.id)
               Behaviors.same
             }
 

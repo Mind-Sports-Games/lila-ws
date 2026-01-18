@@ -38,14 +38,14 @@ final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
       (_, clients) => {
         val newClients = clients - client
         if (newClients.isEmpty) {
-          disconnects add user.id
+          disconnects.add(user.id)
           null
         } else newClients
       }
     )
 
   def tellOne(userId: User.ID, payload: ClientMsg): Unit =
-    Option(users get userId) foreach {
+    Option(users.get(userId)) foreach {
       _ foreach { _ ! payload }
     }
 
@@ -53,16 +53,16 @@ final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
     userIds foreach { tellOne(_, payload) }
 
   def kick(userId: User.ID): Unit =
-    Option(users get userId) foreach {
+    Option(users.get(userId)) foreach {
       _ foreach { _ ! ClientCtrl.Disconnect }
     }
 
   def setTroll(userId: User.ID, v: IsTroll): Unit =
-    Option(users get userId) foreach {
+    Option(users.get(userId)) foreach {
       _ foreach { _ ! ipc.SetTroll(v) }
     }
 
-  def isOnline(userId: User.ID): Boolean = users containsKey userId
+  def isOnline(userId: User.ID): Boolean = users.containsKey(userId)
 
   def size = users.size
 }

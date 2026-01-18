@@ -145,7 +145,7 @@ object LilaOut {
 
       case "tell/flag" =>
         get(args, 2) { case Array(flag, payload) =>
-          Some(TellFlag(Flag(flag), JsonString(payload)))
+          Flag.make(flag).map(f => TellFlag(f, JsonString(payload)))
         }
 
       case "tell/users" =>
@@ -328,7 +328,7 @@ object LilaOut {
           Some(ApiUserOnline(userId, boolean(online)))
         }
 
-      case "pong" => args.toLongOption map UptimeMillis.apply map Pong
+      case "pong" => args.toLongOption.map(UptimeMillis.apply).map(Pong.apply)
 
       case "boot" => Some(LilaBoot)
 

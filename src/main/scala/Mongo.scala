@@ -34,7 +34,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
       conn database dbName.getOrElse("lichess")
     }
 
-  private def collNamed(name: String) = mainDb.map(_ collection name)(parasitic)
+  private def collNamed(name: String) = mainDb.map(_.collection(name))(using parasitic)
   def securityColl                    = collNamed("security")
   def userColl                        = collNamed("user4")
   def coachColl                       = collNamed("coach")
@@ -49,7 +49,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
   def teamColl                        = collNamed("team")
   def swissColl                       = collNamed("swiss")
   def reportColl                      = collNamed("report2")
-  def studyColl                       = studyDb.map(_ collection "study")(parasitic)
+  def studyColl                       = studyDb.map(_.collection("study"))(using parasitic)
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
   def coach[A](f: BSONCollection => Future[A]): Future[A]    = coachColl flatMap f
@@ -69,17 +69,17 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
   def gameExists(id: Game.Id): Future[Boolean] =
     gameCache getIfPresent id match {
       case None        => gameColl flatMap idExists(id.value)
-      case Some(entry) => entry.map(_.isDefined)(parasitic)
+      case Some(entry) => entry.map(_.isDefined)(using parasitic)
     }
 
   def player(fullId: Game.FullId, user: Option[User]): Future[Option[Game.RoundPlayer]] =
     gameCache
       .get(fullId.gameId)
       .map {
-        _ flatMap {
+        _.flatMap {
           _.player(fullId.playerId, user.map(_.id))
         }
-      }(parasitic)
+      }(using parasitic)
 
   private val gameCacheProjection =
     BSONDocument("is" -> true, "us" -> true, "tid" -> true, "sid" -> true, "iid" -> true)
@@ -106,7 +106,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
                   doc.getAsOpt[Swiss.ID]("iid").map(Game.RoundExt.Swiss.apply) orElse
                   doc.getAsOpt[Simul.ID]("sid").map(Game.RoundExt.Simul.apply)
             } yield Game.Round(id, players, ext)
-          }(parasitic)
+          }(using parasitic)
       }
     }
 
@@ -221,7 +221,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
 
     def is(user: Option[User]): Future[IsTroll] =
       user.fold(Future successful IsTroll(false)) { u =>
-        cache.get(u.id).map(IsTroll.apply)(parasitic)
+        cache.get(u.id).map(IsTroll.apply)(using parasitic)
       }
 
     def set(userId: User.ID, v: IsTroll): Unit =
@@ -255,7 +255,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
         hint = None,
         readConcern = ReadConcern.Local
       )
-      .map(0 < _)(parasitic)
+      .map(0 < _)(using parasitic)
 
   private def filterIds(ids: Iterable[String])(coll: BSONCollection): Future[Set[String]] =
     coll.distinct[String, Set](
@@ -270,7 +270,7 @@ object Mongo {
 
   type IdFilter = Iterable[String] => Future[Set[String]]
 
-  implicit val BSONDateTimeHandler = new BSONHandler[DateTime] {
+  implicit val BSONDateTimeHandler: BSONHandler[DateTime] = new BSONHandler[DateTime] {
 
     @inline def readTry(bson: BSONValue): Try[DateTime] =
       bson.asTry[BSONDateTime] map { dt =>

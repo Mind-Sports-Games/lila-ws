@@ -10,10 +10,10 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: 
   import Auth._
 
   def apply(req: RequestHeader): Future[Option[User]] =
-    if (req.flag contains Flag.api) Future successful None
+    if (req.flag.contains(Flag.api)) Future.successful(None)
     else
       sessionIdFromReq(req) match {
-        case Some(sid) if sid startsWith appealPrefix => Future successful None
+        case Some(sid) if sid.startsWith(appealPrefix) => Future.successful(None)
         case Some(sid) =>
           mongo.security {
             _.find(
@@ -34,7 +34,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: 
               }
             }
           }
-        case None => Future successful None
+        case None => Future.successful(None)
       }
 }
 
@@ -47,14 +47,13 @@ object Auth {
   private val appealPrefix   = "appeal:"
 
   def sessionIdFromReq(req: RequestHeader): Option[String] =
-    req cookie cookieName flatMap {
+    req.cookie(cookieName).flatMap {
       case sessionIdRegex(id) => Some(id)
       case _                  => None
-    } orElse
-      req.queryParameter(sessionIdKey)
+    }.orElse(req.queryParameter(sessionIdKey))
 
   def sidFromReq(req: RequestHeader): Option[String] =
-    req cookie cookieName flatMap {
+    req.cookie(cookieName).flatMap {
       case sidRegex(id) => Some(id)
       case _            => None
     }
