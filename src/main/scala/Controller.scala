@@ -33,18 +33,15 @@ final class Controller(
 
   def lobby(req: RequestHeader, emit: ClientEmit) =
     WebSocket(req) { sri => user =>
-      mongo.troll.is(user) map {
-        case (isTroll) =>
-          endpoint(
-            name = "lobby",
-            behavior =
-              LobbyClientActor.start(RoomActor.State(RoomId("lobbyhome"), isTroll), fromVersion(req)) {
-                Deps(emit, Req(req, sri, user), services)
-              },
-            credits = 30,
-            interval = 30.seconds
-          )
-        case _ => notFound
+      mongo.troll.is(user) map { isTroll =>
+        endpoint(
+          name = "lobby",
+          behavior = LobbyClientActor.start(RoomActor.State(RoomId("lobbyhome"), isTroll), fromVersion(req)) {
+            Deps(emit, Req(req, sri, user), services)
+          },
+          credits = 30,
+          interval = 30.seconds
+        )
       }
     }
 
@@ -100,7 +97,7 @@ final class Controller(
     WebSocket(req) { sri => user =>
       mongo.gameExists(id) zip mongo.troll.is(user) map {
         case (true, isTroll) =>
-          val userTv = req queryParameter "userTv" map UserTv.apply
+          val userTv = req.queryParameter("userTv").map(UserTv.apply)
           endpoint(
             name = "round/watch",
             behavior = RoundClientActor
@@ -135,9 +132,9 @@ final class Controller(
 
   def challenge(id: Challenge.Id, req: RequestHeader, emit: ClientEmit) =
     WebSocket(req) { sri => user =>
-      mongo challenger id map {
-        _ map {
-          case Challenge.Anon(secret) => Auth sidFromReq req contains secret
+      mongo.challenger(id).map {
+        _.map {
+          case Challenge.Anon(secret) => Auth.sidFromReq(req).contains(secret)
           case Challenge.User(userId) => user.exists(_.id == userId)
           case Challenge.Open         => false
         }
@@ -192,11 +189,11 @@ final class Controller(
     WebSocket(req) { sri => user =>
       Future successful {
         (user match {
-          case Some(u) => Some(Racer.PlayerId.User(u.id))
-          case None    => Auth.sidFromReq(req) map Racer.PlayerId.Anon.apply
+          case Some(u) => Some(Racer.PlayerId.User(u.id)): Option[Racer.PlayerId]
+          case None    => Auth.sidFromReq(req).map(Racer.PlayerId.Anon.apply)
         }) match {
           case None => notFound
-          case Some(pid) =>
+          case Some(pid: Racer.PlayerId) =>
             endpoint(
               name = "racer",
               behavior = RacerClientActor.start(RoomActor.State(RoomId(id), IsTroll(false)), pid) {
@@ -244,7 +241,7 @@ final class Controller(
 
     def check(req: RequestHeader)(f: => Response): Response =
       req.origin match {
-        case None                                                       => f // for exotic clients and acid ape chess
+        case None => f // for exotic clients and acid ape chess
         case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
         case Some(origin) =>
           logger.debug(s"""CSRF origin: "$origin" ${req.name}""")
@@ -255,7 +252,7 @@ final class Controller(
   private def notFound = Left(HttpResponseStatus.NOT_FOUND)
 
   private def fromVersion(req: RequestHeader): Option[SocketVersion] =
-    req queryParameter "v" flatMap (_.toIntOption) map SocketVersion.apply
+    req.queryParameter("v").flatMap(_.toIntOption).map(SocketVersion.apply)
 }
 
 object Controller {
@@ -269,7 +266,7 @@ object Controller {
       credits: Int,
       interval: FiniteDuration
   ) = {
-    Monitor.connection open name
+    Monitor.connection.open(name)
     Right(
       new Endpoint(
         behavior,

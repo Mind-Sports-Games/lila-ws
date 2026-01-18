@@ -18,14 +18,14 @@ final class RoomCrowd(
   def connect(roomId: RoomId, user: Option[User]): Unit =
     publish(
       roomId,
-      rooms.compute(roomId, (_, cur) => Option(cur).getOrElse(RoomState()) connect user)
+      rooms.compute(roomId, (_, cur) => Option(cur).getOrElse(RoomState()).connect(user))
     )
 
   def disconnect(roomId: RoomId, user: Option[User]): Unit = {
     val room = rooms.computeIfPresent(
       roomId,
       (_, room) => {
-        val newRoom = room disconnect user
+        val newRoom = room.disconnect(user)
         if (newRoom.isEmpty) null else newRoom
       }
     )
@@ -33,13 +33,13 @@ final class RoomCrowd(
   }
 
   def getUsers(roomId: RoomId): Set[User.ID] =
-    Option(rooms get roomId).fold(Set.empty[User.ID])(_.users.keySet)
+    Option(rooms.get(roomId)).fold(Set.empty[User.ID])(_.users.keySet)
 
   def isPresent(roomId: RoomId, userId: User.ID): Boolean =
-    Option(rooms get roomId).exists(_.users contains userId)
+    Option(rooms.get(roomId)).exists(_.users.contains(userId))
 
   def filterPresent(roomId: RoomId, userIds: Set[User.ID]): Set[User.ID] =
-    Option(rooms get roomId).fold(Set.empty[User.ID])(_.users.keySet intersect userIds)
+    Option(rooms.get(roomId)).fold(Set.empty[User.ID])(_.users.keySet.intersect(userIds))
 
   private def publish(roomId: RoomId, room: RoomState): Unit =
     outputBatch(outputOf(roomId, room))
@@ -50,8 +50,8 @@ final class RoomCrowd(
         crowds.updated(crowd.roomId, crowd)
       }
       .values foreach { output =>
-      json room output foreach {
-        Bus.publish(_ room output.roomId, _)
+      json.room(output) foreach {
+        Bus.publish(_.room(output.roomId), _)
       }
     }
   }

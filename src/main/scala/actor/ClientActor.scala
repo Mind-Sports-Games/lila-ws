@@ -122,7 +122,9 @@ object ClientActor {
         clientIn(ClientIn.StormKey(deps.services.stormSign(key, pad)))
         state
 
-      case ClientOut.Ignore =>
+      // NOTE: Scala3 caught these, and I think this is correct, but I didn't want to just use
+      // case _ => state for when we add new ones to this in the future.
+      case ClientOut.Ignore | _: ClientOut.AnaPass | _: ClientOut.Unexpected | ClientOut.WrongHole =>
         state
     }
   }
