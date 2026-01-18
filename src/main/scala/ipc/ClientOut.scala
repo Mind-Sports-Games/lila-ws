@@ -6,15 +6,16 @@ import strategygames.format.{ FEN, Uci }
 import strategygames.variant.Variant
 import strategygames.{
   Centis,
-  Player => PlayerIndex,
   GameFamily,
   GameLogic,
   MoveMetrics,
+  Player => PlayerIndex,
   Pos,
   PromotableRole,
   Role
 }
 import lila.ws.util.*
+import lila.ws.util.LilaJsObject.*
 import play.api.libs.json._
 import scala.util.{ Success, Try }
 
@@ -118,7 +119,7 @@ object ClientOut {
   case class RoundSelectSquaresOffer(
       gf: GameFamily,
       squares: String
-  )                                              extends ClientOutRound
+  ) extends ClientOutRound
   case class RoundHold(mean: Int, sd: Int)       extends ClientOutRound
   case class RoundBerserk(ackId: Option[Int])    extends ClientOutRound
   case class RoundSelfReport(name: String)       extends ClientOutRound
@@ -235,12 +236,13 @@ object ClientOut {
                 variant,
                 chapterId,
                 o,
-                d.obj("halfMove").flatMap(halfMove => {
-                  for {
-                    orig <- halfMove.str("orig") flatMap (p => Pos.fromKey(lib, p))
-                    dest <- halfMove.str("dest") flatMap (p => Pos.fromKey(lib, p))
-                  } yield Move(orig, dest)
-                })
+                d.obj("halfMove")
+                  .flatMap(halfMove => {
+                    for {
+                      orig <- halfMove.str("orig") flatMap (p => Pos.fromKey(lib, p))
+                      dest <- halfMove.str("dest") flatMap (p => Pos.fromKey(lib, p))
+                    } yield Move(orig, dest)
+                  })
               )
             case "anaPass" =>
               for {

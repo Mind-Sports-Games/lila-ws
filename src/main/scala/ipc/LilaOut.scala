@@ -1,7 +1,7 @@
 package lila.ws
 package ipc
 
-import strategygames.{ P2, Player => PlayerIndex, P1, Speed }
+import strategygames.{ P1, P2, Player => PlayerIndex, Speed }
 
 sealed trait LilaOut
 
@@ -50,7 +50,7 @@ object LilaOut {
       version: SocketVersion,
       troll: IsTroll,
       json: JsonString
-  )                                                                        extends AnyRoomOut
+  ) extends AnyRoomOut
   case class TellRoomUser(roomId: RoomId, user: User.ID, json: JsonString) extends AnyRoomOut with SiteOut
   case class TellRoomUsers(roomId: RoomId, users: Iterable[User.ID], json: JsonString)
       extends AnyRoomOut
@@ -85,7 +85,7 @@ object LilaOut {
       flags: RoundEventFlags,
       tpe: String,
       data: JsonString
-  )                                                                                extends RoundOut
+  ) extends RoundOut
   case class RoundTourStanding(tourId: Tour.ID, data: JsonString)                  extends RoundOut
   case class RoundResyncPlayer(fullId: Game.FullId)                                extends RoundOut
   case class RoundGone(fullId: Game.FullId, v: Boolean)                            extends RoundOut
@@ -97,7 +97,7 @@ object LilaOut {
       winner: Option[PlayerIndex],
       playerScores: List[String],
       users: List[User.ID]
-  )                                                                    extends RoundOut
+  ) extends RoundOut
   case class TvSelect(gameId: Game.Id, speed: Speed, json: JsonString) extends RoundOut
 
   // racer
@@ -107,7 +107,7 @@ object LilaOut {
   case class ApiUserOnline(userId: User.ID, online: Boolean) extends AnyRoomOut
   case object LilaBoot                                       extends AnyRoomOut
   case class LilaStop(reqId: Int)                            extends AnyRoomOut
-  case object VersioningReady                                extends RoundOut // lila is ready to receive versioned round events
+  case object VersioningReady extends RoundOut // lila is ready to receive versioned round events
 
   // impl
 
@@ -340,9 +340,9 @@ object LilaOut {
     }
   }
 
-  def commas(str: String): Array[String]                        = if (str == "-") Array.empty else str split ','
-  def boolean(str: String): Boolean                             = str == "+"
-  def optional(str: String): Option[String]                     = if (str == "-") None else Some(str)
-  def readPlayerIndex(str: String): PlayerIndex                 = PlayerIndex.fromP1(str == "w")
+  def commas(str: String): Array[String]        = if (str == "-") Array.empty else str split ','
+  def boolean(str: String): Boolean             = str == "+"
+  def optional(str: String): Option[String]     = if (str == "-") None else Some(str)
+  def readPlayerIndex(str: String): PlayerIndex = PlayerIndex.fromP1(str == "w")
   def readOptionalPlayerIndex(str: String): Option[PlayerIndex] = optional(str) map readPlayerIndex
 }

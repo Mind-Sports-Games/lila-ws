@@ -47,10 +47,13 @@ object Auth {
   private val appealPrefix   = "appeal:"
 
   def sessionIdFromReq(req: RequestHeader): Option[String] =
-    req.cookie(cookieName).flatMap {
-      case sessionIdRegex(id) => Some(id)
-      case _                  => None
-    }.orElse(req.queryParameter(sessionIdKey))
+    req
+      .cookie(cookieName)
+      .flatMap {
+        case sessionIdRegex(id) => Some(id)
+        case _                  => None
+      }
+      .orElse(req.queryParameter(sessionIdKey))
 
   def sidFromReq(req: RequestHeader): Option[String] =
     req.cookie(cookieName).flatMap {

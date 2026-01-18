@@ -36,10 +36,9 @@ final class Controller(
       mongo.troll.is(user) map { isTroll =>
         endpoint(
           name = "lobby",
-          behavior =
-            LobbyClientActor.start(RoomActor.State(RoomId("lobbyhome"), isTroll), fromVersion(req)) {
-              Deps(emit, Req(req, sri, user), services)
-            },
+          behavior = LobbyClientActor.start(RoomActor.State(RoomId("lobbyhome"), isTroll), fromVersion(req)) {
+            Deps(emit, Req(req, sri, user), services)
+          },
           credits = 30,
           interval = 30.seconds
         )
@@ -242,7 +241,7 @@ final class Controller(
 
     def check(req: RequestHeader)(f: => Response): Response =
       req.origin match {
-        case None                                                       => f // for exotic clients and acid ape chess
+        case None => f // for exotic clients and acid ape chess
         case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
         case Some(origin) =>
           logger.debug(s"""CSRF origin: "$origin" ${req.name}""")

@@ -201,7 +201,7 @@ final class LilaHandler(
     }
   }
 
-  lila.setHandlers({
+  lila.setHandlers {
     case Lila.chans.round.out     => roundHandler
     case Lila.chans.site.out      => siteHandler
     case Lila.chans.lobby.out     => lobbyHandler
@@ -213,5 +213,5 @@ final class LilaHandler(
     case Lila.chans.challenge.out => roomHandler
     case Lila.chans.racer.out     => racerHandler
     case chan                     => in => logger.warn(s"Unknown channel $chan sent $in")
-  })
+  }
 }

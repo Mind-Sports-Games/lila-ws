@@ -24,7 +24,7 @@ final class GroupedWithinStage[A](
 
   private val buffer: VectorBuilder[A] = new VectorBuilder
 
-  private var scheduledFlush: Cancellable = scheduler.scheduleOnce(interval, (() => flush()))
+  private var scheduledFlush: Cancellable = scheduler.scheduleOnce(interval, () => flush())
 
   def apply(elem: A): Unit =
     synchronized {
@@ -40,6 +40,6 @@ final class GroupedWithinStage[A](
       buffer.clear()
     }
     scheduledFlush.cancel()
-    scheduledFlush = scheduler.scheduleOnce(interval, (() => flush()))
+    scheduledFlush = scheduler.scheduleOnce(interval, () => flush())
   }
 }
