@@ -33,18 +33,16 @@ final class Controller(
 
   def lobby(req: RequestHeader, emit: ClientEmit) =
     WebSocket(req) { sri => user =>
-      mongo.troll.is(user) map {
-        case (isTroll) =>
-          endpoint(
-            name = "lobby",
-            behavior =
-              LobbyClientActor.start(RoomActor.State(RoomId("lobbyhome"), isTroll), fromVersion(req)) {
-                Deps(emit, Req(req, sri, user), services)
-              },
-            credits = 30,
-            interval = 30.seconds
-          )
-        case _ => notFound
+      mongo.troll.is(user) map { isTroll =>
+        endpoint(
+          name = "lobby",
+          behavior =
+            LobbyClientActor.start(RoomActor.State(RoomId("lobbyhome"), isTroll), fromVersion(req)) {
+              Deps(emit, Req(req, sri, user), services)
+            },
+          credits = 30,
+          interval = 30.seconds
+        )
       }
     }
 
