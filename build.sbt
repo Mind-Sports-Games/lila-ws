@@ -48,16 +48,16 @@ resolvers ++= Seq(
   .getOrElse(Seq())
 
 scalacOptions ++= Seq(
-  "-explain",
+  "-encoding",
+  "utf-8",
+  "-rewrite",
+  "-source:3.7",
+  "-explaintypes",
   "-feature",
+  "-Xtarget:21",
+  "-Wunused:all",
+  "-explain",
   "-language:implicitConversions",
-  "-language:postfixOps",
-  "-unchecked",
-  "-deprecation",
-  "-Wunused:imports",
-  "-Wunused:locals",
-  "-Wunused:privates",
-  "-Wunused:params"
 )
 
 javaOptions ++= Seq("-Xms32m", "-Xmx128m")
