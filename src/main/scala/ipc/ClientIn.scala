@@ -5,7 +5,6 @@ import strategygames.{ Player => PlayerIndex, PocketData, Pos, Role }
 import strategygames.format.{ FEN, Uci, UciCharPair }
 import strategygames.opening.FullOpening
 import lila.ws.Position
-import lila.ws.util.*
 import lila.ws.util.LilaJsObject.*
 import play.api.libs.json._
 

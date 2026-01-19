@@ -14,7 +14,6 @@ import strategygames.{
   PromotableRole,
   Role
 }
-import lila.ws.util.*
 import lila.ws.util.LilaJsObject.*
 import play.api.libs.json._
 import scala.util.{ Success, Try }
