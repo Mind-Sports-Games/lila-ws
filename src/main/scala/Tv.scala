@@ -20,7 +20,7 @@ object Tv {
     val cliMsg = ClientIn.tvSelect(out.json)
     List(fast, slow) foreach { in =>
       in.asMap().keys foreach { gameId =>
-        Bus.publish(_ room RoomId(gameId), cliMsg)
+        Bus.publish(_.room(RoomId(gameId)), cliMsg)
       }
     }
     (if (out.speed <= Speed.Bullet) fast else slow).put(out.gameId.value, true)

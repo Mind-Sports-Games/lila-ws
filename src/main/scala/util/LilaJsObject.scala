@@ -3,32 +3,28 @@ package util
 
 import play.api.libs.json._
 
-final class LilaJsObject(private val js: JsObject) extends AnyVal {
+object LilaJsObject:
 
-  def str(key: String): Option[String] =
-    (js \ key).asOpt[String]
+  extension (js: JsObject)
 
-  def int(key: String): Option[Int] =
-    (js \ key).asOpt[Int]
+    def str(key: String): Option[String] =
+      (js \ key).asOpt[String]
 
-  def boolean(key: String): Option[Boolean] =
-    (js \ key).asOpt[Boolean]
+    def int(key: String): Option[Int] =
+      (js \ key).asOpt[Int]
 
-  def obj(key: String): Option[JsObject] =
-    (js \ key).asOpt[JsObject]
+    def boolean(key: String): Option[Boolean] =
+      (js \ key).asOpt[Boolean]
 
-  def get[A: Reads](key: String): Option[A] =
-    (js \ key).asOpt[A]
+    def obj(key: String): Option[JsObject] =
+      (js \ key).asOpt[JsObject]
 
-  def add(pair: (String, Boolean)): JsObject =
-    if (pair._2) js + (pair._1 -> JsBoolean(true))
-    else js
+    def get[A: Reads](key: String): Option[A] =
+      (js \ key).asOpt[A]
 
-  def add[A: Writes](pair: (String, Option[A])): JsObject =
-    pair._2.fold(js) { a => js + (pair._1 -> Json.toJson(a)) }
-}
+    def add(pair: (String, Boolean)): JsObject =
+      if (pair._2) js + (pair._1 -> JsBoolean(true))
+      else js
 
-object LilaJsObject {
-
-  implicit def augment(o: JsObject) = new LilaJsObject(o)
-}
+    def add[A: Writes](pair: (String, Option[A])): JsObject =
+      pair._2.fold(js) { a => js + (pair._1 -> Json.toJson(a)) }
