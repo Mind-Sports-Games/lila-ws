@@ -113,6 +113,22 @@ object Chess {
       }
     }
 
+  def apply(req: ClientOut.AnaLift): ClientIn =
+    Monitor.time(_.chessMoveTime) {
+      try {
+        val result = Game(req.variant.gameLogic, req.variant.some, Some(req.fen))
+          .lift(req.pos, MoveMetrics())
+          .toOption
+          .map { case (g, action) => (g, Uci(req.variant.gameLogic, action)) }
+
+        applyAction(req.variant, req.path, req.chapterId, result)
+      } catch {
+        case e: java.lang.ArrayIndexOutOfBoundsException =>
+          logger.warn(s"AnaLift ${req.fen} ${req.variant} ${req.pos}", e)
+          ClientIn.StepFailure
+      }
+    }
+
   def apply(req: ClientOut.AnaDrop): ClientIn =
     Monitor.time(_.chessMoveTime) {
       try {
@@ -128,37 +144,74 @@ object Chess {
           .flatMap(u => baseGame.applyUci(u, MoveMetrics()).toOption)
           .map(_._1)
           .getOrElse(baseGame)
-        g.drop(req.role, req.pos)
+        
+        val result = g.drop(req.role, req.pos)
           .toOption
-          .flatMap({ case (game, drop) =>
-            //Get the game record notation (san/sgf) of the last action
-            game.actionStrs.flatten.lastOption map { lastAction =>
-              {
-                val gameRecordNotation =
-                  if (isSgf(req.variant))
-                    strategygames.format.sgf.Dumper(req.variant, Vector(Vector(lastAction)))
-                  else lastAction
-                makeNode(
-                  game,
-                  Uci.WithSan(
-                    req.variant.gameLogic,
-                    Uci(req.variant.gameLogic, drop),
-                    gameRecordNotation
-                  ),
-                  req.path,
-                  req.chapterId,
-                  if (game.situation.playable(false)) game.situation.destinations else Map.empty
-                )
-              }
-            }
-          })
-          .getOrElse(ClientIn.StepFailure)
+          .map { case (gm, action) => (gm, Uci(req.variant.gameLogic, action)) }
+
+        applyAction(req.variant, req.path, req.chapterId, result)
       } catch {
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.pos}", e)
           ClientIn.StepFailure
       }
     }
+
+  def apply(req: ClientOut.AnaRoll): ClientIn =
+    Monitor.time(_.chessMoveTime) {
+      try {
+        val result = Game(req.variant.gameLogic, req.variant.some, Some(req.fen))
+          .randomizeAndApplyDiceRoll(MoveMetrics())
+          .toOption
+          .map { case (g, action) => (g, Uci(req.variant.gameLogic, action)) }
+
+        applyAction(req.variant, req.path, req.chapterId, result)
+      } catch { // TODO: adapt - temporary generic catch for dev testing session
+        case e: Exception =>
+          logger.warn(s"New AnaRoll ${req.fen} ${req.variant}", e)
+          ClientIn.StepFailure
+      }
+    }
+
+  def apply(req: ClientOut.AnaEndTurn): ClientIn =
+    Monitor.time(_.chessMoveTime) {
+      try {
+        val result = Game(req.variant.gameLogic, req.variant.some, Some(req.fen))
+          .endTurn(MoveMetrics())
+          .toOption
+          .map { case (g, action) => (g, Uci(req.variant.gameLogic, action)) }
+
+        applyAction(req.variant, req.path, req.chapterId, result)
+      } catch { // TODO: adapt - temporary generic catch for dev testing session
+        case e: Exception =>
+          logger.warn(s"New AnaEndTurn ${req.fen} ${req.variant}", e)
+          ClientIn.StepFailure
+      }
+    }
+
+  private def applyAction(
+      variant: Variant,
+      path: Path,
+      chapterId: Option[ChapterId],
+      actionResult: Option[(Game, Uci)]
+  ): ClientIn =
+    actionResult
+      .flatMap { case (game, actionUci) =>
+        game.actionStrs.flatten.lastOption.map { lastAction =>
+          val gameRecordNotation =
+            if (isSgf(variant))
+              strategygames.format.sgf.Dumper(variant, Vector(Vector(lastAction)))
+            else lastAction
+          makeNode(
+            game,
+            Uci.WithSan(variant.gameLogic, actionUci, gameRecordNotation),
+            path,
+            chapterId,
+            if (game.situation.playable(false)) game.situation.destinations else Map.empty
+          )
+        }
+      }
+      .getOrElse(ClientIn.StepFailure)
 
   def apply(req: ClientOut.AnaDests): ClientIn.Dests =
     Monitor.time(_.chessDestTime) {
@@ -235,6 +288,15 @@ object Chess {
               truncatedMoves.map(_.values.toList.flatten)
             case _ => None
           }
+        },
+        lifts = sit match {
+          case Situation.Backgammon(_) =>
+            val movable = sit playable false
+            Some(
+              if (movable) sit.lifts.map(_.pos.key).mkString
+              else ""
+            )
+          case _ => None
         }
       )
     }
@@ -277,14 +339,12 @@ object Chess {
           FullOpeningDB.findByFen(game.board.variant.gameLogic, fen)
         else None,
       drops = if (movable) game.situation.drops else Some(Nil),
-      dropsByRole = game.situation match {
-        case (Situation.FairySF(_)) =>
-          game.situation.dropsByRole
-        case (Situation.Go(_)) =>
-          game.situation.dropsByRole
-        case _ => None
+      dropsByRole = game.situation.dropsByRole,
+      lifts = if (movable) Some(game.situation.lifts.map(_.pos)) else Some(Nil),
+      pocketData = game.board.variant.gameLogic match {
+        case GameLogic.Backgammon() => None
+        case _                      => game.situation.board.pocketData
       },
-      pocketData = game.situation.board.pocketData,
       chapterId = chapterId
     )
   }
