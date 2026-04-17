@@ -181,6 +181,7 @@ object ClientIn {
       opening: Option[FullOpening],
       drops: Option[List[Pos]],
       dropsByRole: Option[Map[Role, List[Pos]]],
+      lifts: Option[List[Pos]],
       pocketData: Option[PocketData],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
@@ -211,6 +212,9 @@ object ClientIn {
               .add("drops" -> drops.map { drops =>
                 JsString(drops.map(_.key).mkString)
               })
+              .add("lifts" -> lifts.map { lifts =>
+                JsString(lifts.map(_.key).mkString)
+              })
               .add("crazy" -> pocketData)
           )
           .add("ch" -> chapterId)
@@ -222,7 +226,8 @@ object ClientIn {
       dests: String,
       opening: Option[FullOpening],
       chapterId: Option[ChapterId],
-      destsUci: Option[List[String]]
+      destsUci: Option[List[String]],
+      lifts: Option[String] = None
   ) extends ClientIn {
     def write =
       cliMsg(
@@ -235,6 +240,7 @@ object ClientIn {
           .add("opening" -> opening)
           .add("ch" -> chapterId)
           .add("destsUci" -> destsUci)
+          .add("lifts" -> lifts)
       )
   }
 
