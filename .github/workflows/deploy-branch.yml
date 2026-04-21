@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  openjdk21:
+  openjdk25:
     runs-on: ubuntu-24.04
     env:
       JAVA_OPTS: "-Xmx20g"
@@ -33,7 +33,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21.0.5
+          java-version: 25
           cache: sbt
       - name: Setup sbt
         uses: sbt/setup-sbt@v1
@@ -65,8 +65,8 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL_DEPLOY_DEV }}
-    needs: openjdk21
-    if: ${{ needs.openjdk21.result == 'success' }}
+    needs: openjdk25
+    if: ${{ needs.openjdk25.result == 'success' }}
     steps:
       - name: Notify
         run: |
