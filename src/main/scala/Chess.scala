@@ -166,9 +166,9 @@ object Chess {
           .map { case (g, action) => (g, Uci(req.variant.gameLogic, action)) }
 
         applyAction(req.variant, req.path, req.chapterId, result)
-      } catch { // TODO: adapt - temporary generic catch for dev testing session
-        case e: Exception =>
-          logger.warn(s"New AnaRoll ${req.fen} ${req.variant}", e)
+      } catch {
+        case e: java.lang.ArrayIndexOutOfBoundsException =>
+          logger.warn(s"AnaRoll ${req.fen} ${req.variant}", e)
           ClientIn.StepFailure
       }
     }
@@ -182,9 +182,9 @@ object Chess {
           .map { case (g, action) => (g, Uci(req.variant.gameLogic, action)) }
 
         applyAction(req.variant, req.path, req.chapterId, result)
-      } catch { // TODO: adapt - temporary generic catch for dev testing session
-        case e: Exception =>
-          logger.warn(s"New AnaEndTurn ${req.fen} ${req.variant}", e)
+      } catch {
+        case e: java.lang.ArrayIndexOutOfBoundsException =>
+          logger.warn(s"AnaEndTurn ${req.fen} ${req.variant}", e)
           ClientIn.StepFailure
       }
     }
