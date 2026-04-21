@@ -64,6 +64,21 @@ object StudyClientActor {
             forward(anaDrop.payload)
             Behaviors.same
 
+          case anaLift: ClientOut.AnaLift =>
+            clientIn(Chess(anaLift))
+            forward(anaLift.payload)
+            Behaviors.same
+
+          case anaRoll: ClientOut.AnaRoll =>
+            // lila is the source of truth for dice rolls
+            forward(anaRoll.payload)
+            Behaviors.same
+
+          case anaEndTurn: ClientOut.AnaEndTurn =>
+            clientIn(Chess(anaEndTurn))
+            forward(anaEndTurn.payload)
+            Behaviors.same
+
           case ClientOut.PalantirPing =>
             deps.req.user map { Palantir.respondToPing(state.room.id, _) } foreach clientIn
             Behaviors.same
