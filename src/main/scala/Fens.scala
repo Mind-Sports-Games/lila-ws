@@ -1,7 +1,7 @@
 package lila.ws
 
 import akka.actor.typed.ActorRef
-import strategygames.{ Player => PlayerIndex, GameFamily }
+import strategygames.{ GameFamily, Player => PlayerIndex }
 import strategygames.format.{ FEN, Uci }
 import java.util.concurrent.ConcurrentHashMap
 import lila.ws.ipc._
