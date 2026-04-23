@@ -341,10 +341,7 @@ object Chess {
       drops = if (movable) game.situation.drops else Some(Nil),
       dropsByRole = game.situation.dropsByRole,
       lifts = if (movable) Some(game.situation.lifts.map(_.pos)) else Some(Nil),
-      pocketData = game.board.variant.gameLogic match {
-        case GameLogic.Backgammon() => None
-        case _                      => game.situation.board.pocketData
-      },
+      pocketData = game.situation.board.pocketData,
       chapterId = chapterId
     )
   }
