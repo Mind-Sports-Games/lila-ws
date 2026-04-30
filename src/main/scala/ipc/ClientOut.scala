@@ -66,7 +66,20 @@ object ClientOut {
       halfMove: Option[Move] = None
   ) extends ClientOutSite
 
-  case class AnaPass(
+  case class AnaLift(
+      pos: Pos,
+      fen: FEN,
+      path: Path,
+      variant: Variant,
+      chapterId: Option[ChapterId],
+      payload: JsObject
+  ) extends ClientOutSite
+
+  case class AnaPass(fen: FEN, path: Path, variant: Variant, chapterId: Option[ChapterId], payload: JsObject)
+      extends ClientOutSite
+  case class AnaRoll(fen: FEN, path: Path, variant: Variant, chapterId: Option[ChapterId], payload: JsObject)
+      extends ClientOutSite
+  case class AnaEndTurn(
       fen: FEN,
       path: Path,
       variant: Variant,
@@ -242,7 +255,24 @@ object ClientOut {
                   } yield Move(orig, dest)
                 })
               )
-            case "anaPass" =>
+            case "anaLift" =>
+              for {
+                d <- o obj "d"
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                pos  <- d str "pos" flatMap (p => Pos.fromKey(lib, p))
+                path <- d str "path"
+                fen  <- d str "fen"
+                chapterId = d str "ch" map ChapterId.apply
+              } yield AnaLift(
+                pos,
+                FEN(lib, fen),
+                Path(path),
+                variant,
+                chapterId,
+                o
+              )
+            case t @ ("anaPass" | "anaRoll" | "anaEndTurn") =>
               for {
                 d <- o obj "d"
                 lib     = dataGameLogic(d)
@@ -250,13 +280,15 @@ object ClientOut {
                 path <- d str "path"
                 fen  <- d str "fen"
                 chapterId = d str "ch" map ChapterId.apply
-              } yield AnaPass(
-                FEN(lib, fen),
-                Path(path),
-                variant,
-                chapterId,
-                o
-              )
+              } yield {
+                val f = FEN(lib, fen)
+                val p = Path(path)
+                t match {
+                  case "anaPass"    => AnaPass(f, p, variant, chapterId, o)
+                  case "anaRoll"    => AnaRoll(f, p, variant, chapterId, o)
+                  case "anaEndTurn" => AnaEndTurn(f, p, variant, chapterId, o)
+                }
+              }
             case "anaDests" =>
               for {
                 d    <- o obj "d"
