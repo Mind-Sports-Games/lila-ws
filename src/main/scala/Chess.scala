@@ -160,8 +160,12 @@ object Chess {
   def apply(req: ClientOut.AnaRoll): ClientIn =
     Monitor.time(_.chessMoveTime) {
       try {
-        val result = Game(req.variant.gameLogic, req.variant.some, Some(req.fen))
-          .randomizeAndApplyDiceRoll(MoveMetrics())
+        val game = Game(req.variant.gameLogic, req.variant.some, Some(req.fen))
+        val rollResult = (req.payload \ "d" \ "dice").asOpt[List[Int]] match {
+          case Some(d) => game.diceRoll(d, MoveMetrics())
+          case None    => game.randomizeAndApplyDiceRoll(MoveMetrics())
+        }
+        val result = rollResult
           .toOption
           .map { case (g, action) => (g, Uci(req.variant.gameLogic, action)) }
 
