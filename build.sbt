@@ -35,10 +35,8 @@ libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"   
 libraryDependencies += "com.softwaremill.macwire"   %% "macros"                       % "2.6.7" % "provided"
 libraryDependencies += "com.outr"                   %% "hasher"                       % "1.2.3"
 
-resolvers += Resolver.sonatypeCentralSnapshots
-resolvers += "lila-maven" at "https://raw.githubusercontent.com/Mind-Sports-Games/lila-maven/master"
-
 resolvers ++= Seq(
+  Resolver.sonatypeCentralSnapshots,
   "lila-maven".at("https://raw.githubusercontent.com/Mind-Sports-Games/lila-maven/master"),
   "jitpack".at("https://jitpack.io")
 ) ++ sys.env
