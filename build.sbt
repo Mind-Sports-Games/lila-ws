@@ -8,7 +8,7 @@ lazy val `lila-ws` = (project in file("."))
 val akkaVersion          = "2.6.18"
 val kamonVersion         = "2.8.0"
 val nettyVersion         = "4.1.63.Final"
-val reactivemongoVersion = "1.1.0-RC19"
+val reactivemongoVersion = "1.1.0-RC20"
 
 scalaVersion := "3.7.4"
 
@@ -21,7 +21,7 @@ libraryDependencies += "io.lettuce"                  % "lettuce-core"           
 libraryDependencies += "io.netty"                    % "netty-handler"                % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-codec-http"             % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
-libraryDependencies += "org.playstrategy"           %% "strategygames"                % "10.2.1-pstrat211_scala3"
+libraryDependencies += "org.playstrategy"           %% "strategygames"                % "10.2.1-s3-ps1"
 libraryDependencies += "com.typesafe.akka"          %% "akka-actor-typed"             % akkaVersion
 //libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"                   % akkaVersion
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"                % "3.9.6"
