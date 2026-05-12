@@ -296,7 +296,7 @@ object Chess {
         },
         lifts = sit match {
           case Situation.Backgammon(_) =>
-            val movable = sit playable false
+            val movable = sit.playable(false)
             Some(
               if (movable) sit.lifts.map(_.pos.key).mkString
               else ""
