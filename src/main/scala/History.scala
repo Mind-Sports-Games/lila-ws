@@ -31,7 +31,7 @@ final class History[K <: StringValue, V <: ipc.ClientIn.HasVersion](
 
   def stop(key: K) = histories.remove(key.toString)
 
-  def hasEvents(key: K) = Option(histories get key.toString).exists(_.nonEmpty)
+  def hasEvents(key: K) = Option(histories.get(key.toString)).exists(_.nonEmpty)
 
   def size = histories.size
 

@@ -25,7 +25,7 @@ final private class FrameHandler(implicit ec: ExecutionContext)
         val txt = frame.text
         if (txt.nonEmpty) {
           val limiter = ctx.channel.attr(key.limit).get
-          if (limiter == null || limiter(txt)) ClientOut parse txt foreach {
+          if (limiter == null || limiter(txt)) ClientOut.parse(txt) foreach {
 
             case ClientOut.Unexpected(msg) =>
               Monitor.clientOutUnexpected.increment()

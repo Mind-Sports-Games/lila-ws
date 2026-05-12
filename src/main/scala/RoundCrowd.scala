@@ -48,10 +48,10 @@ final class RoundCrowd(
     )
 
   def getUsers(roomId: RoomId): Set[User.ID] =
-    Option(rounds get roomId).fold(Set.empty[User.ID])(_.room.users.keySet)
+    Option(rounds.get(roomId)).fold(Set.empty[User.ID])(_.room.users.keySet)
 
   def isPresent(roomId: RoomId, userId: User.ID): Boolean =
-    Option(rounds get roomId).exists(_.room.users contains userId)
+    Option(rounds.get(roomId)).exists(_.room.users.contains(userId))
 
   private def publish(roomId: RoomId, round: RoundState): Unit =
     outputBatch(outputOf(roomId, round))
@@ -64,8 +64,8 @@ final class RoundCrowd(
       .values
     lila.emit.round(LilaIn.RoundOnlines(aggregated))
     aggregated foreach { output =>
-      json round output foreach {
-        Bus.publish(_ room output.room.roomId, _)
+      json.round(output) foreach {
+        Bus.publish(_.room(output.room.roomId), _)
       }
     }
   }
@@ -91,12 +91,12 @@ object RoundCrowd {
   ) {
     def connect(user: Option[User], player: Option[PlayerIndex]) =
       copy(
-        room = if (player.isDefined) room else room connect user,
+        room = if (player.isDefined) room else room.connect(user),
         players = player.fold(players)(c => players.update(c, _ + 1))
       )
     def disconnect(user: Option[User], player: Option[PlayerIndex]) =
       copy(
-        room = if (player.isDefined) room else room disconnect user,
+        room = if (player.isDefined) room else room.disconnect(user),
         players = player.fold(players)(c => players.update(c, nb => Math.max(0, nb - 1)))
       )
     def botOnline(playerIndex: PlayerIndex, online: Boolean): Option[RoundState] = Some {

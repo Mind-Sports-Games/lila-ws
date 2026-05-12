@@ -5,6 +5,7 @@ import java.util.concurrent.locks.ReentrantLock
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.jdk.CollectionConverters._
 import scala.util.Random
+import scala.util.boundary, boundary.break
 
 // Best effort fixed capacity cache for the social graph of online users.
 //
@@ -55,16 +56,16 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     }
   }
 
-  private def findSlot(id: User.ID, exceptSlot: Int): Slot = {
+  private def findSlot(id: User.ID, exceptSlot: Int): Slot = boundary {
     // Try to find an existing or empty slot between hash and
     // hash + MaxStride.
     val hash = fxhash32(id) & slotsMask
     for (s <- hash to (hash + SocialGraph.MaxStride)) {
       val slot = s & slotsMask
       read(slot) match {
-        case None => return NewSlot(slot)
+        case None => break(NewSlot(slot))
         case Some(existing) if existing.id == id =>
-          return ExistingSlot(slot, existing)
+          break(ExistingSlot(slot, existing))
         case _ =>
       }
     }
@@ -78,11 +79,11 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     for (s <- hash to (hash + SocialGraph.MaxStride)) {
       val slot = s & slotsMask
       read(slot) match {
-        case None => return NewSlot(slot)
+        case None => break(NewSlot(slot))
         case Some(existing) if existing.id == id =>
-          return ExistingSlot(slot, existing)
+          break(ExistingSlot(slot, existing))
         case Some(existing) if !existing.meta.online && slot != exceptSlot =>
-          return freeSlot(slot)
+          break(freeSlot(slot))
         case _ =>
       }
     }

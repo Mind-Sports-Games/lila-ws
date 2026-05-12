@@ -17,7 +17,7 @@ package object ws {
     def unapply[A, B](x: Tuple2[A, B]): Option[Tuple2[A, B]] = Some(x)
   }
 
-  @inline implicit def toOrnicarAddKcombinator[A](any: A) =
+  @inline implicit def toOrnicarAddKcombinator[A](any: A): ornicarAddKcombinator[A] =
     new ornicarAddKcombinator(any)
 }
 

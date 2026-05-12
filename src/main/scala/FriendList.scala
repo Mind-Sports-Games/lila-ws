@@ -29,7 +29,7 @@ final class FriendList(
               .get(u.id)
               .map {
                 _ map { UserView(u.id, _, u.meta) }
-              }(ExecutionContext.parasitic)
+              }(using ExecutionContext.parasitic)
         }
       } map { views =>
         emit(Onlines(views.flatten))

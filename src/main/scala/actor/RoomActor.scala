@@ -23,7 +23,7 @@ object RoomActor {
     import deps._
     ClientActor.onStart(deps, ctx)
     req.user foreach { users.connect(_, ctx.self) }
-    Bus.subscribe(Bus.channel room state.id, ctx.self)
+    Bus.subscribe(Bus.channel.room(state.id), ctx.self)
     roomCrowd.connect(state.id, req.user)
     History.room.getFrom(state.id, fromVersion) match {
       case None         => clientIn(ClientIn.Resync)
@@ -32,7 +32,7 @@ object RoomActor {
   }
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
-    Bus.unsubscribe(Bus.channel room state.id, ctx.self)
+    Bus.unsubscribe(Bus.channel.room(state.id), ctx.self)
     deps.roomCrowd.disconnect(state.id, deps.req.user)
   }
 

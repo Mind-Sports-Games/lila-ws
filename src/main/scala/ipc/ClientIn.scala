@@ -5,7 +5,7 @@ import strategygames.{ Player => PlayerIndex, PocketData, Pos, Role }
 import strategygames.format.{ FEN, Uci, UciCharPair }
 import strategygames.opening.FullOpening
 import lila.ws.Position
-import lila.ws.util.LilaJsObject.augment
+import lila.ws.util.LilaJsObject.*
 import play.api.libs.json._
 
 sealed trait ClientIn extends ClientMsg {
@@ -21,9 +21,9 @@ private object DropsByRole {
       var first = true
       drops foreach { case (orig, dests) =>
         if (first) first = false
-        else sb append " "
-        sb append orig.forsyth
-        dests foreach { sb append _.key }
+        else sb.append(" ")
+        sb.append(orig.forsyth)
+        dests foreach { d => sb.append(d.key) }
       }
       JsString(sb.toString)
     }

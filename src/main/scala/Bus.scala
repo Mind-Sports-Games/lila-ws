@@ -13,8 +13,8 @@ object Bus {
     publish = (actor, event) => actor ! event
   )
 
-  def subscribe   = impl.subscribe _
-  def unsubscribe = impl.unsubscribe _
+  def subscribe   = impl.subscribe
+  def unsubscribe = impl.unsubscribe
 
   def publish(chan: Chan, event: ClientMsg): Unit =
     impl.publish(chan, event)
@@ -46,7 +46,7 @@ object Bus {
     Msg(event, chan(channel))
 
   def size                     = impl.size
-  def sizeOf(chan: ChanSelect) = impl sizeOf chan(channel)
+  def sizeOf(chan: ChanSelect) = impl.sizeOf(chan(channel))
 
   // distinct bus for internal events
   val internal = new util.EventBus[Any, Chan, PartialFunction[Any, Unit]](

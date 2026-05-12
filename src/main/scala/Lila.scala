@@ -16,7 +16,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
 
   object status {
     private var value: Status = Online
-    def setOffline() = { value = Offline }
+    def setOffline()          = { value = Offline }
     def setOnline() = {
       value = Online
       buffer.flush()
@@ -29,7 +29,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
     private val queue       = new ConcurrentLinkedQueue[Buffered]()
     private lazy val connIn = redis.connectPubSub
 
-    def enqueue(chan: String, msg: String) = queue offer Buffered(chan, msg)
+    def enqueue(chan: String, msg: String) = queue.offer(Buffered(chan, msg))
 
     @tailrec def flush(): Unit = {
       val next = queue.poll()
@@ -41,7 +41,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
   }
 
   private val logger = Logger(getClass)
-  private val redis  = RedisClient create RedisURI.create(config.getString("redis.uri"))
+  private val redis  = RedisClient.create(RedisURI.create(config.getString("redis.uri")))
 
   private val handlersPromise                  = Promise[Handlers]()
   private val futureHandlers: Future[Handlers] = handlersPromise.future
@@ -83,6 +83,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
             challenge,
             racer
           )
+        case _ => throw new RuntimeException("impossible")
       }
 
   private def connect[In <: LilaIn](chan: Chan): Future[Emit[In]] = {
@@ -92,7 +93,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
     val emit: Emit[In] = in => {
       val msg    = in.write
       val path   = msg.takeWhile(' '.!=)
-      val chanIn = chan in msg
+      val chanIn = chan.in(msg)
       if (status.isOnline) {
         connIn.async.publish(chanIn, msg)
         Monitor.redis.in(chanIn, path)
@@ -116,7 +117,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
         }
     }) map { _ =>
       val msg = LilaIn.WsBoot.write
-      connIn.async.publish(chan in msg, msg)
+      connIn.async.publish(chan.in(msg), msg)
       emit
     }
   }
@@ -126,7 +127,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
     connOut.addListener(new RedisPubSubAdapter[String, String] {
       override def message(_chan: String, msg: String): Unit = {
         Monitor.redis.out(chanName, msg.takeWhile(' '.!=))
-        LilaOut read msg match {
+        LilaOut.read(msg) match {
           case Some(out) => handlers(handlerName)(out)
           case None      => logger.warn(s"Can't parse $msg on $chanName")
         }

@@ -47,7 +47,7 @@ final class CrowdJson(
         )
       }
 
-  private def isBotName(str: String) = str startsWith "BOT "
+  private def isBotName(str: String) = str.startsWith("BOT ")
 
   private val inquirersCache: AsyncLoadingCache[Unit, Set[User.ID]] =
     Scaffeine()

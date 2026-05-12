@@ -14,7 +14,7 @@ object Util {
     private val chars        = (('0' to '9') ++ ('a' to 'z') ++ ('A' to 'Z')).mkString
     private val nbChars      = chars.length
 
-    def char: Char = chars(secureRandom nextInt nbChars)
+    def char: Char = chars(secureRandom.nextInt(nbChars))
 
     def string(len: Int): String = new String(Array.fill(len)(char))
 
