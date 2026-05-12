@@ -12,31 +12,31 @@ final class RequestHeader(uri: String, req: HttpHeaders) {
   def path = query.path
 
   def header(name: CharSequence): Option[String] =
-    Option(req get name).filter(_.nonEmpty)
+    Option(req.get(name)).filter(_.nonEmpty)
 
   def cookie(name: String): Option[String] =
     for {
       encoded <- header(HttpHeaderNames.COOKIE)
-      cookies = ServerCookieDecoder.LAX decode encoded
-      cookie <- cookies.asScala.find(_.name contains name)
+      cookies = ServerCookieDecoder.LAX.decode(encoded)
+      cookie <- cookies.asScala.find(_.name.contains(name))
       value  <- Some(cookie.value).filter(_.nonEmpty)
     } yield value
 
   def queryParameter(name: String): Option[String] =
-    Option(query.parameters.get(name)).map(_ get 0).filter(_.nonEmpty)
+    Option(query.parameters.get(name)).map(_.get(0)).filter(_.nonEmpty)
 
   def queryParameterInt(name: String): Option[Int] =
-    queryParameter(name) flatMap (_.toIntOption)
+    queryParameter(name).flatMap(_.toIntOption)
 
-  def userAgent: String = header(HttpHeaderNames.USER_AGENT) getOrElse ""
+  def userAgent: String = header(HttpHeaderNames.USER_AGENT).getOrElse("")
 
   def origin: Option[String] = header(HttpHeaderNames.ORIGIN)
 
-  def flag: Option[Flag] = queryParameter("flag") flatMap Flag.make
+  def flag: Option[Flag] = queryParameter("flag").flatMap(Flag.make)
 
-  def ip: Option[IpAddress] = header("X-Forwarded-For") map IpAddress
+  def ip: Option[IpAddress] = header("X-Forwarded-For").map(IpAddress.apply)
 
   def name: String = s"$uri UA: $userAgent"
 
-  def sri = queryParameter("sri") flatMap Sri.from
+  def sri = queryParameter("sri").flatMap(Sri.from)
 }

@@ -38,7 +38,7 @@ object Chess {
           captures = fullCaptureFields,
           partialCaptures = req.fullCapture.getOrElse(false)
         ).toOption.flatMap { case (game, move) =>
-          //Get the game record notation (san/sgf) of the last action
+          // Get the game record notation (san/sgf) of the last action
           game.actionStrs.flatten.lastOption.map { lastAction =>
             {
               val gameRecordNotation =
@@ -91,7 +91,7 @@ object Chess {
                       truncatedDests
                         .getOrElse(validMoves.view.mapValues { _ map (_.dest) })
                         .to(Map)
-                        .map { case (p, m) => (Pos.Draughts(p), m.map(Pos.Draughts)) }
+                        .map { case (p, m) => (Pos.Draughts(p), m.map(Pos.Draughts.apply)) }
                     if (movable) draughtsDests else Map.empty
                   }
                   case _ => if (movable) game.situation.destinations else Map.empty
@@ -130,8 +130,8 @@ object Chess {
           .getOrElse(baseGame)
         g.drop(req.role, req.pos)
           .toOption
-          .flatMap({ case (game, drop) =>
-            //Get the game record notation (san/sgf) of the last action
+          .flatMap { case (game, drop) =>
+            // Get the game record notation (san/sgf) of the last action
             game.actionStrs.flatten.lastOption map { lastAction =>
               {
                 val gameRecordNotation =
@@ -151,7 +151,7 @@ object Chess {
                 )
               }
             }
-          })
+          }
           .getOrElse(ClientIn.StepFailure)
       } catch {
         case e: java.lang.ArrayIndexOutOfBoundsException =>
@@ -194,7 +194,7 @@ object Chess {
                   truncatedDests
                     .getOrElse(validMoves.view.mapValues { _ map (_.dest) })
                     .to(Map)
-                    .map { case (p, lp) => (Pos.Draughts(p), lp.map(Pos.Draughts)) }
+                    .map { case (p, lp) => (Pos.Draughts(p), lp.map(Pos.Draughts.apply)) }
                 val destStr = json.destString(destsToConvert)
                 if (captureLength > 0) s"#$captureLength $destStr"
                 else destStr
@@ -217,7 +217,7 @@ object Chess {
         destsUci = {
           (sit, req.variant) match {
             case (Situation.Draughts(sit), Variant.Draughts(variant)) =>
-              //heavily duplicated from above
+              // heavily duplicated from above
               val orig: Option[strategygames.draughts.Pos] =
                 if (req.lastUci.exists(_.length >= 4) && sit.ghosts > 0)
                   req.lastUci.flatMap { uci =>
@@ -253,7 +253,7 @@ object Chess {
       destsUci: Option[List[String]] = None,
       captureLength: Option[Int] = None
   ): ClientIn.Node = {
-    val movable = game.situation playable false
+    val movable = game.situation.playable(false)
     val fen     = Forsyth.>>(game.board.variant.gameLogic, game)
     ClientIn.Node(
       path = path,
@@ -270,7 +270,7 @@ object Chess {
       captureLength = captureLength,
       opening =
         if (
-          //for the time being openings use plies but this may change when openings use multiaction
+          // for the time being openings use plies but this may change when openings use multiaction
           game.plies <= 30 && Variant
             .openingSensibleVariants(game.board.variant.gameLogic)(game.board.variant)
         )
@@ -294,15 +294,15 @@ object Chess {
       .Go() || variant.gameLogic == GameLogic.Backgammon()
   }
 
-  //TODO: push this into strategygames. So much copy/paste from lila.socket.AnaDests
-  //this continues until `object json`
+  // TODO: push this into strategygames. So much copy/paste from lila.socket.AnaDests
+  // this continues until `object json`
   private val initialChessDests    = "iqy muC gvx ltB bqs pxF jrz nvD ksA owE"
   private val initialDraughtsDests = "HCD GBC ID FAB EzA"
 
-  //draughts
+  // draughts
   private type BoardWithUci = (Option[draughts.Board], String)
 
-  //draughts
+  // draughts
   private def uniqueUci(otherUcis: List[BoardWithUci], uci: BoardWithUci) = {
     var i      = 2
     var unique = uci._2.slice(0, i)
@@ -315,7 +315,7 @@ object Chess {
     else (none, unique)
   }
 
-  //draughts
+  // draughts
   private def getValidMoves(
       sit: draughts.Situation,
       from: Option[draughts.Pos],
@@ -325,7 +325,7 @@ object Chess {
       Map(pos -> sit.movesFrom(pos, fullCapture))
     }
 
-  //draughts
+  // draughts
   private def truncateMoves(validMoves: Map[draughts.Pos, List[draughts.Move]]) = {
     var truncated = false
     val truncatedMoves = validMoves map { case (pos, moves) =>
@@ -350,7 +350,7 @@ object Chess {
     (if (truncated) truncateUcis(truncatedMoves) else truncatedMoves).view.mapValues { _ map { _._2 } }
   }
 
-  //draughts
+  // draughts
   @scala.annotation.tailrec
   private def truncateUcis(
       validUcis: Map[draughts.Pos, List[BoardWithUci]]
@@ -381,13 +381,13 @@ object Chess {
   }
 
   object json {
-    implicit val fenWrite         = Writes[FEN] { fen => JsString(fen.value) }
-    implicit val pathWrite        = Writes[Path] { path => JsString(path.value) }
-    implicit val uciWrite         = Writes[Uci] { uci => JsString(uci.uci) }
-    implicit val uciCharPairWrite = Writes[UciCharPair] { ucp => JsString(ucp.toString) }
-    implicit val posWrite         = Writes[Pos] { pos => JsString(pos.key) }
-    implicit val chapterIdWrite   = Writes[ChapterId] { ch => JsString(ch.value) }
-    implicit val openingWrite = Writes[FullOpening] { o =>
+    implicit val fenWrite: Writes[FEN]                 = Writes[FEN] { fen => JsString(fen.value) }
+    implicit val pathWrite: Writes[Path]               = Writes[Path] { path => JsString(path.value) }
+    implicit val uciWrite: Writes[Uci]                 = Writes[Uci] { uci => JsString(uci.uci) }
+    implicit val uciCharPairWrite: Writes[UciCharPair] = Writes[UciCharPair] { ucp => JsString(ucp.toString) }
+    implicit val posWrite: Writes[Pos]                 = Writes[Pos] { pos => JsString(pos.key) }
+    implicit val chapterIdWrite: Writes[ChapterId]     = Writes[ChapterId] { ch => JsString(ch.value) }
+    implicit val openingWrite: Writes[FullOpening] = Writes[FullOpening] { o =>
       Json.obj(
         "eco"  -> o.eco,
         "name" -> o.name
@@ -401,9 +401,9 @@ object Chess {
       var first = true
       dests foreach { case (orig, dests) =>
         if (first) first = false
-        else sb append " "
-        sb append orig.piotr
-        dests foreach { sb append _.piotr }
+        else sb.append(" ")
+        sb.append(orig.piotr)
+        dests foreach { d => sb.append(d.piotr) }
       }
       sb.toString
     }

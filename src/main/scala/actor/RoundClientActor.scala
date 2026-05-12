@@ -67,7 +67,7 @@ object RoundClientActor {
         def gameId = Game.Id(state.room.id.value)
         def fullId =
           state.player map { p =>
-            gameId full p.id
+            gameId.full(p.id)
           }
 
         msg match {

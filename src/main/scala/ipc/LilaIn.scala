@@ -2,7 +2,7 @@ package lila.ws
 package ipc
 
 import strategygames.format.Uci
-import strategygames.{ Centis, Player => PlayerIndex, GameFamily, MoveMetrics }
+import strategygames.{ Centis, GameFamily, MoveMetrics, Player => PlayerIndex }
 import play.api.libs.json._
 
 sealed trait LilaIn {
@@ -102,8 +102,8 @@ object LilaIn {
   case class RoomSetVersions(versions: Iterable[(String, SocketVersion)]) extends AnyRoom {
     def write =
       s"room/versions ${commas(versions.map { case (r, v) =>
-        s"$r:$v"
-      })}"
+          s"$r:$v"
+        })}"
   }
 
   case class WaitingUsers(

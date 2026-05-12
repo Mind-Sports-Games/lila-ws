@@ -100,7 +100,7 @@ final private class ProtocolHandler(
         Monitor.websocketError("handshake")
         ctx.channel.close()
       case e: CorruptedWebSocketFrameException
-          if Option(e.getMessage).exists(_ startsWith "Max frame length") =>
+          if Option(e.getMessage).exists(_.startsWith("Max frame length")) =>
         Monitor.websocketError("frameLength")
       case _: CorruptedWebSocketFrameException =>
         Monitor.websocketError("corrupted")
@@ -108,7 +108,7 @@ final private class ProtocolHandler(
         Monitor.websocketError("uriTooLong")
         sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.REQUEST_URI_TOO_LONG)
       case e: IllegalArgumentException
-          if Option(e.getMessage).exists(_ contains "Header value contains a prohibited character") =>
+          if Option(e.getMessage).exists(_.contains("Header value contains a prohibited character")) =>
         Monitor.websocketError("headerIllegalChar")
         sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.BAD_REQUEST)
       case _ =>

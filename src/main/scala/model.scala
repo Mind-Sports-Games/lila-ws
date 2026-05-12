@@ -110,7 +110,7 @@ case class Sri(value: String) extends AnyVal with StringValue
 
 object Sri {
   type Str = String
-  def random = Sri(util.Util.secureRandom string 12)
+  def random = Sri(util.Util.secureRandom.string(12))
   def from(str: String): Option[Sri] =
     if (str contains ' ') None
     else Some(Sri(str))
