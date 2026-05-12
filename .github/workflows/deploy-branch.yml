@@ -37,6 +37,8 @@ jobs:
           cache: sbt
       - name: Setup sbt
         uses: sbt/setup-sbt@v1
+      - name: Use lila-maven dev branch
+        run: echo "LILA_MAVEN_RESOLVERS=https://raw.githubusercontent.com/Mind-Sports-Games/lila-maven/dev" >> $GITHUB_ENV
       - run: sbt -Depoll=true "test;stage"
       - run: cp LICENSE README.md target/universal/stage && git log -n 1 --pretty=oneline > target/universal/stage/commit.txt
       - run: cd target/universal/stage && tar -cvpJf ../../../lila-ws-3.0.tar.xz . && cd -
