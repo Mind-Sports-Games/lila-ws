@@ -98,6 +98,18 @@ object ClientActor {
         clientIn(Chess(anaDrop))
         state
 
+      case anaLift: ClientOut.AnaLift =>
+        clientIn(Chess(anaLift))
+        state
+
+      case anaRoll: ClientOut.AnaRoll =>
+        clientIn(Chess(anaRoll))
+        state
+
+      case anaEndTurn: ClientOut.AnaEndTurn =>
+        clientIn(Chess(anaEndTurn))
+        state
+
       case anaDests: ClientOut.AnaDests =>
         clientIn(Chess(anaDests))
         state
