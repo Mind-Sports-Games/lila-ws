@@ -178,6 +178,38 @@ object Chess {
       }
     }
 
+  def apply(req: ClientOut.AnaPass): ClientIn =
+    Monitor.time(_.chessMoveTime) {
+      try {
+        val result = Game(req.variant.gameLogic, req.variant.some, Some(req.fen))
+          .pass(MoveMetrics())
+          .toOption
+          .map { case (g, action) => (g, Uci(req.variant.gameLogic, action)) }
+
+        applyAction(req.variant, req.path, req.chapterId, result)
+      } catch {
+        case e: java.lang.ArrayIndexOutOfBoundsException =>
+          logger.warn(s"AnaPass ${req.fen} ${req.variant}", e)
+          ClientIn.StepFailure
+      }
+    }
+
+  def apply(req: ClientOut.AnaDrawCounter): ClientIn =
+    Monitor.time(_.chessMoveTime) {
+      try {
+        val result = Game(req.variant.gameLogic, req.variant.some, Some(req.fen))
+          .drawCounter(req.role, MoveMetrics())
+          .toOption
+          .map { case (g, action) => (g, Uci(req.variant.gameLogic, action)) }
+
+        applyAction(req.variant, req.path, req.chapterId, result)
+      } catch {
+        case e: java.lang.ArrayIndexOutOfBoundsException =>
+          logger.warn(s"AnaDrawCounter ${req.fen} ${req.variant} ${req.role}", e)
+          ClientIn.StepFailure
+      }
+    }
+
   def apply(req: ClientOut.AnaEndTurn): ClientIn =
     Monitor.time(_.chessMoveTime) {
       try {
@@ -482,6 +514,7 @@ object Chess {
                 case Role.ChessRole(_)   => GameLogic.Chess()
                 case Role.FairySFRole(_) => GameLogic.FairySF()
                 case Role.GoRole(_)      => GameLogic.Go()
+                case Role.EntropyRole(_) => GameLogic.Entropy()
                 case _                   => sys.error("Pocket not implemented for GameLogic")
               }
             case None => GameLogic.Chess()

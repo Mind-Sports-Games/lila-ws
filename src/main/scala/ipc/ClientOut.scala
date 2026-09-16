@@ -79,6 +79,14 @@ object ClientOut {
       extends ClientOutSite
   case class AnaRoll(fen: FEN, path: Path, variant: Variant, chapterId: Option[ChapterId], payload: JsObject)
       extends ClientOutSite
+  case class AnaDrawCounter(
+      role: Role,
+      fen: FEN,
+      path: Path,
+      variant: Variant,
+      chapterId: Option[ChapterId],
+      payload: JsObject
+  ) extends ClientOutSite
   case class AnaEndTurn(
       fen: FEN,
       path: Path,
@@ -256,6 +264,16 @@ object ClientOut {
                     } yield Move(orig, dest)
                   })
               )
+            case "anaDrawCounter" =>
+              for {
+                d <- o.obj("d")
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                role <- d.str("role") flatMap Role.allByGroundName(lib, variant.gameFamily).get
+                path <- d.str("path")
+                fen  <- d.str("fen")
+                chapterId = d.str("ch") map ChapterId.apply
+              } yield AnaDrawCounter(role, FEN(lib, fen), Path(path), variant, chapterId, o)
             case "anaLift" =>
               for {
                 d <- o.obj("d")
@@ -392,6 +410,15 @@ object ClientOut {
                 blur  = d.int("b") contains 1
                 ackId = d.int("a")
               } yield RoundMove(variant.gameFamily, diceroll, blur, parseMetrics(d), ackId)
+            case "drawcounter" =>
+              for {
+                d <- o.obj("d")
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                drawCounter <- Uci.DoDrawCounter.apply(lib)
+                blur  = d.int("b") contains 1
+                ackId = d.int("a")
+              } yield RoundMove(variant.gameFamily, drawCounter, blur, parseMetrics(d), ackId)
             case "cubeaction" =>
               for {
                 d <- o.obj("d")

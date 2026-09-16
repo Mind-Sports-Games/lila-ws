@@ -110,6 +110,14 @@ object ClientActor {
         clientIn(Chess(anaEndTurn))
         state
 
+      case anaPass: ClientOut.AnaPass =>
+        clientIn(Chess(anaPass))
+        state
+
+      case anaDrawCounter: ClientOut.AnaDrawCounter =>
+        clientIn(Chess(anaDrawCounter))
+        state
+
       case anaDests: ClientOut.AnaDests =>
         clientIn(Chess(anaDests))
         state
@@ -136,7 +144,7 @@ object ClientActor {
 
       // NOTE: Scala3 caught these, and I think this is correct, but I didn't want to just use
       // case _ => state for when we add new ones to this in the future.
-      case ClientOut.Ignore | _: ClientOut.AnaPass | _: ClientOut.Unexpected | ClientOut.WrongHole =>
+      case ClientOut.Ignore | _: ClientOut.Unexpected | ClientOut.WrongHole =>
         state
     }
   }
