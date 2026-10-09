@@ -144,7 +144,7 @@ object Chess {
           .flatMap(u => baseGame.applyUci(u, MoveMetrics()).toOption)
           .map(_._1)
           .getOrElse(baseGame)
-        
+
         val result = g
           .drop(req.role, req.pos)
           .toOption
@@ -166,8 +166,7 @@ object Chess {
           case Some(d) => game.diceRoll(d, MoveMetrics())
           case None    => game.randomizeAndApplyDiceRoll(MoveMetrics())
         }
-        val result = rollResult
-          .toOption
+        val result = rollResult.toOption
           .map { case (g, action) => (g, Uci(req.variant.gameLogic, action)) }
 
         applyAction(req.variant, req.path, req.chapterId, result)
@@ -206,6 +205,38 @@ object Chess {
       } catch {
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"AnaDrawCounter ${req.fen} ${req.variant} ${req.role}", e)
+          ClientIn.StepFailure
+      }
+    }
+
+  def apply(req: ClientOut.AnaSwap): ClientIn =
+    Monitor.time(_.chessMoveTime) {
+      try {
+        val result = Game(req.variant.gameLogic, req.variant.some, Some(req.fen))
+          .swap(MoveMetrics())
+          .toOption
+          .map { case (g, action) => (g, action.toUci) }
+
+        applyAction(req.variant, req.path, req.chapterId, result)
+      } catch {
+        case e: java.lang.ArrayIndexOutOfBoundsException =>
+          logger.warn(s"AnaSwap ${req.fen} ${req.variant}", e)
+          ClientIn.StepFailure
+      }
+    }
+
+  def apply(req: ClientOut.AnaSwap2): ClientIn =
+    Monitor.time(_.chessMoveTime) {
+      try {
+        val result = Game(req.variant.gameLogic, req.variant.some, Some(req.fen))
+          .swap2(MoveMetrics())
+          .toOption
+          .map { case (g, action) => (g, action.toUci) }
+
+        applyAction(req.variant, req.path, req.chapterId, result)
+      } catch {
+        case e: java.lang.ArrayIndexOutOfBoundsException =>
+          logger.warn(s"AnaSwap2 ${req.fen} ${req.variant}", e)
           ClientIn.StepFailure
       }
     }

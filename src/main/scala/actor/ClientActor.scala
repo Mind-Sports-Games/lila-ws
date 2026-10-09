@@ -118,6 +118,14 @@ object ClientActor {
         clientIn(Chess(anaDrawCounter))
         state
 
+      case anaSwap: ClientOut.AnaSwap =>
+        clientIn(Chess(anaSwap))
+        state
+
+      case anaSwap2: ClientOut.AnaSwap2 =>
+        clientIn(Chess(anaSwap2))
+        state
+
       case anaDests: ClientOut.AnaDests =>
         clientIn(Chess(anaDests))
         state
