@@ -139,6 +139,7 @@ final class LilaHandler(
             "drawcounter",
             "swap",
             "swap2",
+            "offer10",
             "cubeaction",
             "selectSquares"
           )

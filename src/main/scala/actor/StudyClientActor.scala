@@ -94,6 +94,16 @@ object StudyClientActor {
             forward(anaSwap2.payload)
             Behaviors.same
 
+          case anaOffer10: ClientOut.AnaOffer10 =>
+            clientIn(Chess(anaOffer10))
+            forward(anaOffer10.payload)
+            Behaviors.same
+
+          case anaSelectSquares: ClientOut.AnaSelectSquares =>
+            clientIn(Chess(anaSelectSquares))
+            forward(anaSelectSquares.payload)
+            Behaviors.same
+
           case anaEndTurn: ClientOut.AnaEndTurn =>
             clientIn(Chess(anaEndTurn))
             forward(anaEndTurn.payload)
