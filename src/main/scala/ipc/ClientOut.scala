@@ -331,7 +331,7 @@ object ClientOut {
                 d <- o.obj("d")
                 lib     = dataGameLogic(d)
                 variant = dataVariant(d, lib)
-                squares <- d.str("s").map(_.split(",").toList.flatMap(p => Pos.fromKey(lib, p)))
+                squares <- d.str("sq").map(_.split(",").toList.flatMap(p => Pos.fromKey(lib, p)))
                 path    <- d.str("path")
                 fen     <- d.str("fen")
                 chapterId = d.str("ch").map(ChapterId.apply)
@@ -475,7 +475,7 @@ object ClientOut {
                 d <- o.obj("d")
                 lib     = dataGameLogic(d)
                 variant = dataVariant(d, lib)
-                squares <- d.str("s").map(_.split(",").flatMap(p => Pos.fromKey(lib, p)))
+                squares <- d.str("sq").map(_.split(",").flatMap(p => Pos.fromKey(lib, p)))
                 ss      <- Uci.SelectSquares.fromSquares(lib, variant.gameFamily, squares.toList)
                 blur  = d.int("b") contains 1
                 ackId = d.int("a")
