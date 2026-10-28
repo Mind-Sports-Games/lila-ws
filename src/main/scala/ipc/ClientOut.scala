@@ -90,14 +90,6 @@ object ClientOut {
       chapterId: Option[ChapterId],
       payload: JsObject
   ) extends ClientOutSite
-  case class AnaSelectSquares(
-      squares: List[Pos],
-      fen: FEN,
-      path: Path,
-      variant: Variant,
-      chapterId: Option[ChapterId],
-      payload: JsObject
-  ) extends ClientOutSite
   case class AnaDrawCounter(
       role: Role,
       fen: FEN,
@@ -326,16 +318,6 @@ object ClientOut {
                 case "anaSwap2"   => AnaSwap2(FEN(lib, fen), Path(path), variant, chapterId, o)
                 case "anaOffer10" => AnaOffer10(FEN(lib, fen), Path(path), variant, chapterId, o)
               }
-            case "anaSelectSquares" =>
-              for {
-                d <- o.obj("d")
-                lib     = dataGameLogic(d)
-                variant = dataVariant(d, lib)
-                squares <- d.str("sq").map(_.split(",").toList.flatMap(p => Pos.fromKey(lib, p)))
-                path    <- d.str("path")
-                fen     <- d.str("fen")
-                chapterId = d.str("ch").map(ChapterId.apply)
-              } yield AnaSelectSquares(squares, FEN(lib, fen), Path(path), variant, chapterId, o)
             case "anaDests" =>
               for {
                 d    <- o.obj("d")

@@ -130,10 +130,6 @@ object ClientActor {
         clientIn(Chess(anaOffer10))
         state
 
-      case anaSelectSquares: ClientOut.AnaSelectSquares =>
-        clientIn(Chess(anaSelectSquares))
-        state
-
       case anaDests: ClientOut.AnaDests =>
         clientIn(Chess(anaDests))
         state

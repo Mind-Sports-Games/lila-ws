@@ -257,22 +257,6 @@ object Chess {
       }
     }
 
-  def apply(req: ClientOut.AnaSelectSquares): ClientIn =
-    Monitor.time(_.chessMoveTime) {
-      try {
-        val result = Game(req.variant.gameLogic, req.variant.some, Some(req.fen))
-          .selectSquares(req.squares, MoveMetrics())
-          .toOption
-          .map { case (g, action) => (g, Uci(req.variant.gameLogic, action)) }
-
-        applyAction(req.variant, req.path, req.chapterId, result)
-      } catch {
-        case e: java.lang.ArrayIndexOutOfBoundsException =>
-          logger.warn(s"AnaSelectSquares ${req.fen} ${req.variant} ${req.squares.mkString(",")}", e)
-          ClientIn.StepFailure
-      }
-    }
-
   def apply(req: ClientOut.AnaEndTurn): ClientIn =
     Monitor.time(_.chessMoveTime) {
       try {
