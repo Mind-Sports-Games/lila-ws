@@ -482,7 +482,7 @@ object ClientOut {
                 d <- o.obj("d")
                 lib     = dataGameLogic(d)
                 variant = dataVariant(d, lib)
-                squares <- d.str("s")
+                squares <- d.str("sq")
               } yield RoundSelectSquaresOffer(variant.gameFamily, squares)
             // chat
             case "talk" => o.str("d") map { ChatSay.apply }

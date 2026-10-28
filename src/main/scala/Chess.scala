@@ -215,7 +215,7 @@ object Chess {
         val result = Game(req.variant.gameLogic, req.variant.some, Some(req.fen))
           .swap(MoveMetrics())
           .toOption
-          .map { case (g, action) => (g, action.toUci) }
+          .map { case (g, action) => (g, Uci(req.variant.gameLogic, action)) }
 
         applyAction(req.variant, req.path, req.chapterId, result)
       } catch {
@@ -231,7 +231,7 @@ object Chess {
         val result = Game(req.variant.gameLogic, req.variant.some, Some(req.fen))
           .swap2(MoveMetrics())
           .toOption
-          .map { case (g, action) => (g, action.toUci) }
+          .map { case (g, action) => (g, Uci(req.variant.gameLogic, action)) }
 
         applyAction(req.variant, req.path, req.chapterId, result)
       } catch {
@@ -247,7 +247,7 @@ object Chess {
         val result = Game(req.variant.gameLogic, req.variant.some, Some(req.fen))
           .offer10(MoveMetrics())
           .toOption
-          .map { case (g, action) => (g, action.toUci) }
+          .map { case (g, action) => (g, Uci(req.variant.gameLogic, action)) }
 
         applyAction(req.variant, req.path, req.chapterId, result)
       } catch {
