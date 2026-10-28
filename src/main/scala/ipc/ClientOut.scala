@@ -79,6 +79,17 @@ object ClientOut {
       extends ClientOutSite
   case class AnaRoll(fen: FEN, path: Path, variant: Variant, chapterId: Option[ChapterId], payload: JsObject)
       extends ClientOutSite
+  case class AnaSwap(fen: FEN, path: Path, variant: Variant, chapterId: Option[ChapterId], payload: JsObject)
+      extends ClientOutSite
+  case class AnaSwap2(fen: FEN, path: Path, variant: Variant, chapterId: Option[ChapterId], payload: JsObject)
+      extends ClientOutSite
+  case class AnaOffer10(
+      fen: FEN,
+      path: Path,
+      variant: Variant,
+      chapterId: Option[ChapterId],
+      payload: JsObject
+  ) extends ClientOutSite
   case class AnaDrawCounter(
       role: Role,
       fen: FEN,
@@ -291,7 +302,7 @@ object ClientOut {
                 chapterId,
                 o
               )
-            case t @ ("anaPass" | "anaRoll" | "anaEndTurn") =>
+            case t @ ("anaPass" | "anaRoll" | "anaEndTurn" | "anaSwap" | "anaSwap2" | "anaOffer10") =>
               for {
                 d <- o.obj("d")
                 lib     = dataGameLogic(d)
@@ -299,11 +310,14 @@ object ClientOut {
                 path <- d.str("path")
                 fen  <- d.str("fen")
                 chapterId = d.str("ch").map(ChapterId.apply)
-              } yield (t match {
+              } yield t match {
                 case "anaPass"    => AnaPass(FEN(lib, fen), Path(path), variant, chapterId, o)
                 case "anaRoll"    => AnaRoll(FEN(lib, fen), Path(path), variant, chapterId, o)
                 case "anaEndTurn" => AnaEndTurn(FEN(lib, fen), Path(path), variant, chapterId, o)
-              })
+                case "anaSwap"    => AnaSwap(FEN(lib, fen), Path(path), variant, chapterId, o)
+                case "anaSwap2"   => AnaSwap2(FEN(lib, fen), Path(path), variant, chapterId, o)
+                case "anaOffer10" => AnaOffer10(FEN(lib, fen), Path(path), variant, chapterId, o)
+              }
             case "anaDests" =>
               for {
                 d    <- o.obj("d")
@@ -419,6 +433,15 @@ object ClientOut {
                 blur  = d.int("b") contains 1
                 ackId = d.int("a")
               } yield RoundMove(variant.gameFamily, drawCounter, blur, parseMetrics(d), ackId)
+            case t @ ("swap" | "swap2" | "offer10") =>
+              for {
+                d <- o.obj("d")
+                lib     = dataGameLogic(d)
+                variant = dataVariant(d, lib)
+                swap <- Uci(lib, variant.gameFamily, t)
+                blur  = d.int("b") contains 1
+                ackId = d.int("a")
+              } yield RoundMove(variant.gameFamily, swap, blur, parseMetrics(d), ackId)
             case "cubeaction" =>
               for {
                 d <- o.obj("d")
@@ -434,7 +457,7 @@ object ClientOut {
                 d <- o.obj("d")
                 lib     = dataGameLogic(d)
                 variant = dataVariant(d, lib)
-                squares <- d.str("s").map(_.split(",").flatMap(p => Pos.fromKey(lib, p)))
+                squares <- d.str("sq").map(_.split(",").flatMap(p => Pos.fromKey(lib, p)))
                 ss      <- Uci.SelectSquares.fromSquares(lib, variant.gameFamily, squares.toList)
                 blur  = d.int("b") contains 1
                 ackId = d.int("a")
@@ -459,7 +482,7 @@ object ClientOut {
                 d <- o.obj("d")
                 lib     = dataGameLogic(d)
                 variant = dataVariant(d, lib)
-                squares <- d.str("s")
+                squares <- d.str("sq")
               } yield RoundSelectSquaresOffer(variant.gameFamily, squares)
             // chat
             case "talk" => o.str("d") map { ChatSay.apply }
